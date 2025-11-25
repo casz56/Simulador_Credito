@@ -78,20 +78,14 @@
                     <p id="user-id-display" class="text-xs text-gray-500 mt-1">Usuario: Cargando...</p>
                 </div>
 
-                <!-- Consecutivo y Botones de Descarga (parte superior derecha) -->
-                <div class="w-full sm:w-auto flex flex-col items-end gap-2">
-                    <!-- Consecutivo Dinámico -->
-                    <p id="consecutivo-display" class="px-3 py-1 text-[10px] sm:text-xs lg:text-sm font-semibold border border-infihuila-green text-infihuila-green rounded-full shadow-sm whitespace-nowrap">
-                        Consecutivo N.º ---
-                    </p>
-                    <div class="flex flex-row gap-2">
-                        <button id="download-excel-btn" onclick="exportToExcel()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue transition duration-300 ease-in-out disabled:opacity-50" disabled>
-                            Descargar Excel
-                        </button>
-                        <button id="download-pdf-btn" onclick="exportToPDF()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green transition duration-300 ease-in-out disabled:opacity-50" disabled>
-                            Descargar PDF
-                        </button>
-                    </div>
+                <!-- Botones de Descarga -->
+                <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2 justify-end sm:justify-end">
+                    <button id="download-excel-btn" onclick="exportToExcel()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                        Descargar Excel
+                    </button>
+                    <button id="download-pdf-btn" onclick="exportToPDF()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                        Descargar PDF
+                    </button>
                 </div>
             </div>
         </header>
@@ -102,6 +96,10 @@
                 <!-- TÍTULO I. INFORMACIÓN DEL CRÉDITO -->
                 <div class="flex justify-between items-center mb-4 gap-2">
                     <h3 class="text-xl sm:text-2xl font-bold text-infihuila-blue">I. Información del crédito</h3>
+                    <!-- Consecutivo Dinámico -->
+                    <button id="consecutivo-display" onclick="generarConsecutivo()" class="px-3 py-1 text-[10px] sm:text-xs lg:text-sm font-semibold border border-infihuila-blue text-infihuila-blue rounded-full shadow-sm whitespace-nowrap cursor-pointer">
+                        Consecutivo N.º ---
+                    </button>
                 </div>
 
                 <!-- Input Monto -->
@@ -154,9 +152,6 @@
                     <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
                         <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
                         Simular Crédito
-                    </button>
-                    <button id="save-simulation-btn" onclick="saveSimulation()" class="w-full bg-gray-500 hover:bg-infihuila-blue text-white font-semibold py-2 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md disabled:opacity-50" disabled>
-                        Guardar Simulación
                     </button>
                 </div>
 
@@ -278,7 +273,7 @@
 
             } catch (error) {
                 console.error("Error al inicializar Firebase o autenticar:", error);
-                document.getElementById('user-id-display').textContent = `Usuario: Error de conexión`;
+                document.getElementById('user-id-display').textContent = `Usuario sin conexión`;
                 window.simularCredito(); // Intentar simular localmente
             }
         };
@@ -308,7 +303,6 @@
                 return;
             }
 
-            const saveBtn = document.getElementById('save-simulation-btn');
             saveBtn.disabled = true;
             saveBtn.textContent = 'Guardando...';
 
@@ -369,7 +363,6 @@
 
         // Habilita el guardado después de una simulación exitosa
         window.enableSaveButton = function() {
-            const saveBtn = document.getElementById('save-simulation-btn');
             saveBtn.disabled = false;
             saveBtn.textContent = 'Guardar Simulación';
             saveBtn.classList.remove('bg-infihuila-green', 'hover:bg-infihuila-green/80');
@@ -385,6 +378,41 @@
 
         // Variable para almacenar la tabla de amortización para la exportación
         let lastAmortizationTableData = []; 
+        // --- FUNCIONES DE CONSECUTIVO LOCAL (sin Firebase) ---
+        function initConsecutivoLocal() {
+            try {
+                let n = localStorage.getItem("consecutivoInfihuila");
+                if (!n) {
+                    n = 1;
+                    localStorage.setItem("consecutivoInfihuila", n);
+                }
+                const btn = document.getElementById("consecutivo-display");
+                if (btn) {
+                    btn.textContent = "Consecutivo N.º " + String(n).padStart(3, "0") + "-" + new Date().getFullYear();
+                }
+            } catch (e) {
+                console.warn("No se pudo inicializar el consecutivo local:", e);
+            }
+        }
+
+        function generarConsecutivo() {
+            try {
+                let n = localStorage.getItem("consecutivoInfihuila");
+                if (!n) {
+                    n = 1;
+                } else {
+                    n = parseInt(n) + 1;
+                }
+                localStorage.setItem("consecutivoInfihuila", n);
+                const btn = document.getElementById("consecutivo-display");
+                if (btn) {
+                    btn.textContent = "Consecutivo N.º " + String(n).padStart(3, "0") + "-" + new Date().getFullYear();
+                }
+            } catch (e) {
+                console.warn("No se pudo actualizar el consecutivo local:", e);
+            }
+        }
+
         
         // --- FUNCIONES DE EXPORTACIÓN ---
 
@@ -530,14 +558,12 @@
         // Función para simular el crédito (AMORTIZACIÓN DE CAPITAL CONSTANTE)
         async function simularCredito() {
             const button = document.querySelector('button[onclick="simularCredito()"]');
-            const saveBtn = document.getElementById('save-simulation-btn');
             const spinner = document.getElementById('loading-spinner');
             const excelBtn = document.getElementById('download-excel-btn');
             const pdfBtn = document.getElementById('download-pdf-btn');
 
             spinner.classList.remove('hidden');
             button.disabled = true;
-            saveBtn.disabled = true; // Desactivar guardar al inicio de la simulación
             excelBtn.disabled = true;
             pdfBtn.disabled = true;
             document.getElementById('tabla-seccion').classList.add('hidden'); // Ocultar tabla al inicio
@@ -703,7 +729,6 @@
             excelBtn.disabled = false; // Habilitar botones de descarga
             pdfBtn.disabled = false;
             
-            window.enableSaveButton(); // Habilitar botón de guardar
         }
 
         // --- FUNCIONES DE GRÁFICOS (Sin cambios) ---
@@ -902,8 +927,13 @@
                 }
             }
             
-            // Inicializar Firebase (llama a getConsecutivo y simularCredito al finalizar la autenticación)
-            window.initFirebase();
+            // Inicializar Firebase (si está disponible en el entorno)
+            if (typeof window.initFirebase === 'function') {
+                window.initFirebase();
+            }
+
+            // Inicializar consecutivo local (funciona siempre en GitHub Pages)
+            initConsecutivoLocal();
             
             // Event listeners para re-simular al cambiar inputs
             document.querySelectorAll('#monto, #plazo, #spread, #tasa-base-input, #periodo-gracia').forEach(input => {
