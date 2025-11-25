@@ -8,6 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Carga de Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <!-- Carga de SheetJS (xlsx) para la exportación a Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Carga de jsPDF y html2canvas para la exportación a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <!-- Configuración de la paleta de colores de Infihuila (Aproximación institucional) -->
     <script>
         tailwind.config = {
@@ -37,119 +43,127 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 4, 6, 0.05);
             background-color: white;
         }
+        /* Estilo para ocultar la tabla antes de simular */
+        #tabla-seccion {
+            transition: all 0.3s ease-in-out;
+        }
     </style>
 </head>
-<body class="bg-infihuila-light min-h-screen p-4 sm:p-8 font-sans text-infihuila-text">
+<body class="bg-infihuila-light min-h-screen p-4 sm:p-6 lg:p-8 font-sans text-infihuila-text">
 
     <div class="max-w-6xl mx-auto">
-        <header class="flex items-center mb-8 p-4 bg-white text-infihuila-green rounded-xl shadow-lg border border-infihuila-green">
-            <div class="flex items-center space-x-4">
-                <img src="logo-infihuila.png" alt="Logo INFIHUILA" class="h-16 w-auto">
-                <div>
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-infihuila-green">SIMULADOR DE CRÉDITOS</h1>
-                    <h2 class="text-xl sm:text-2xl font-light mt-1 text-infihuila-green">Gestión Comercial - Infihuila</h2>
+        <!-- ENCABEZADO PRINCIPAL -->
+        <header class="w-full mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border border-infihuila-green">
+            <div class="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
+                <!-- Logo superior izquierda -->
+                <div class="w-full sm:w-auto flex justify-start sm:justify-start">
+                    <!-- Se usa una URL de placeholder ya que la imagen local no está disponible -->
+                    <img src="Logo_Infi.png" alt="Logo INFIHUILA" class="h-14 sm:h-16 w-auto object-contain">
+                </div>
+
+                <!-- Títulos centrados (Color Principal en Verde Institucional) -->
+                <div class="flex-1 text-center">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-infihuila-green leading-tight">
+                        SIMULADOR DE CRÉDITOS
+                    </h1>
+                    <!-- Subtítulo en color azul institucional para contraste -->
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-normal mt-1 text-infihuila-green leading-snug">
+                        Gestión Comercial - INFIHUILA
+                    </h2>
+                </div>
+
+                <!-- Botón de Consecutivo y Botones de Descarga (Esquina superior derecha) -->
+                <div class="w-full sm:w-auto flex flex-col items-end gap-2">
+                    <button class="px-3 py-1 text-[10px] sm:text-xs lg:text-sm font-semibold border border-infihuila-green text-infihuila-green rounded-full shadow-sm hover:bg-infihuila-green hover:text-white transition duration-300 ease-in-out whitespace-nowrap">
+                        Consecutivo N.º 001-2025
+                    </button>
+                    <div class="flex flex-row gap-2">
+                        <button id="download-excel-btn" onclick="exportToExcel()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                            Descargar Excel
+                        </button>
+                        <button id="download-pdf-btn" onclick="exportToPDF()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                            Descargar PDF
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:col-span-3 lg:grid-cols-3 gap-6">
-
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-max">
             <!-- Panel de Inputs: Información del crédito -->
-            <div class="card p-6 lg:col-span-1 h-fit">
-                <h3 class="text-2xl font-bold mb-4 text-infihuila-blue">Información del crédito</h3>
+            <div class="card p-5 sm:p-6 lg:p-6 lg:col-span-1 h-fit">
+                <!-- TÍTULO I. INFORMACIÓN DEL CRÉDITO -->
+                <div class="flex justify-between items-center mb-4 gap-2">
+                    <h3 class="text-xl sm:text-2xl font-bold text-infihuila-blue">I. Información del crédito</h3>
+                </div>
 
-                <!-- Input Monto (Set to 6,000,000,000 for verification) -->
+                <!-- Input Monto -->
                 <div class="mb-4">
                     <label for="monto" class="block text-sm font-medium mb-1">Monto del Crédito ($)</label>
-                    <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
 
-                <!-- Input Plazo (Set to 60 for verification) -->
+                <!-- Input Plazo -->
                 <div class="mb-4">
                     <label for="plazo" class="block text-sm font-medium mb-1">Plazo (Meses)</label>
-                    <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
                 
-                <!-- Input Periodo de Gracia (Set to 12 for verification) -->
+                <!-- Input Periodo de Gracia -->
                 <div class="mb-4">
                     <label for="periodo-gracia" class="block text-sm font-medium mb-1">Periodo de Gracia (Meses)</label>
-                    <select id="periodo-gracia" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <select id="periodo-gracia" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                         <option value="0">0 Meses</option>
-                        <!-- Script to generate options and set default to 12 -->
-                        <script>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const select = document.getElementById('periodo-gracia');
-                                // Remove the default '0 Meses' option if it exists
-                                while (select.firstChild) {
-                                    select.removeChild(select.firstChild);
-                                }
-                                for (let i = 0; i <= 24; i++) {
-                                    const option = document.createElement('option');
-                                    option.value = i;
-                                    option.textContent = i + ' Meses';
-                                    if (i === 12) { // Set default to 12 for matching the uploaded file
-                                        option.selected = true;
-                                    }
-                                    select.appendChild(option);
-                                }
-                            });
-                        </script>
                     </select>
                     <p class="text-xs text-gray-500 mt-1">Durante este periodo solo se pagan intereses. Luego, el capital a amortizar es fijo.</p>
                 </div>
 
-
-                <!-- Selección Tasa de Referencia (Tipo) - TNA y E.A. disponibles -->
+                <!-- Selección Tasa de Referencia (Tipo) -->
                 <div class="mb-4">
                     <label for="tasa-referencia" class="block text-sm font-medium mb-1">Tipo de Tasa Base</label>
-                    <select id="tasa-referencia" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <select id="tasa-referencia" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                         <option value="DTF">DTF</option>
                         <option value="IBR">IBR</option>
-                        <option value="TNA" selected>Tasa Nominal Anual (TNA)</option> <!-- Opción por defecto para coincidir con el 11.15% inicial -->
-                        <option value="EA">Tasa Efectiva Anual (E.A.)</option> <!-- Nueva opción -->
+                        <option value="TNA" selected>Tasa Nominal Anual (TNA)</option>
+                        <option value="EA">Tasa Efectiva Anual (E.A.)</option>
                     </select>
                     <p id="tasa-explicacion" class="text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
                 </div>
                 
-                <!-- Input Tasa Base Manual (Set to 11.15 for verification, valor original) -->
+                <!-- Input Tasa Base Manual -->
                 <div class="mb-4">
                     <label for="tasa-base-input" class="block text-sm font-medium mb-1">Valor de Tasa Base (%)</label> 
-                    <input type="number" id="tasa-base-input" value="11.15" min="0" max="100" step="0.0001" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <input type="number" id="tasa-base-input" value="11.15" min="0" max="100" step="0.0001" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
 
-                <!-- Input Spread (Set to 0.0 for verification) -->
+                <!-- Input Spread -->
                 <div class="mb-4">
                     <label for="spread" class="block text-sm font-medium mb-1">Spread (Puntos %)</label>
-                    <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                    <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
 
                 <!-- Botón de Simulación -->
-                <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl transition duration-300 ease-in-out shadow-md">
-                    <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full mr-2"></span>
+                <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
+                    <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
                     Simular Crédito
                 </button>
 
                 <!-- DETALLES DEL CRÉDITO (Resumen actualizado) -->
                 <div id="detalles-credito" class="mt-6 card p-4 border border-infihuila-blue bg-white shadow-md">
-                    <h4 class="text-lg font-bold mb-3 text-infihuila-blue">Detalles del crédito (Valores Iniciales)</h4>
-                    <div class="space-y-2 text-sm">
-                        <!-- 1. Cuota mensual (Máxima) -->
-                        <p class="flex justify-between items-center"><span class="font-medium">1. Cuota Mensual:</span> <span id="detalle-cuota" class="text-lg font-extrabold text-infihuila-blue">---</span></p>
+                    <h4 class="text-base sm:text-lg font-bold mb-3 text-infihuila-blue">II. Detalles del crédito (Valores Iniciales)</h4>
+                    <div class="space-y-2 text-xs sm:text-sm">
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">1. Cuota Mensual:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
                         <hr class="border-gray-200">
-                        <!-- 2. Capital mensual (Fijo) -->
-                        <p class="flex justify-between items-center"><span class="font-medium">2. Capital Mensual Fijo:</span> <span id="detalle-capital-fijo" class="font-semibold text-infihuila-text">---</span></p>
-                        <!-- 3. Intereses mensuales (Máximos) -->
-                        <p class="flex justify-between items-center"><span class="font-medium">3. Intereses Mensuales (Inicial):</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">2. Capital Mensual Fijo:</span> <span id="detalle-capital-fijo" class="font-semibold text-infihuila-text">---</span></p>
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">3. Intereses Mensuales (Inicial):</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
                         <hr class="border-gray-200">
-                        <!-- 4. Tasa final mensual -->
-                        <p class="flex justify-between items-center"><span class="font-medium">4. Tasa Mensual Final:</span> <span id="detalle-tasa-mensual" class="font-bold text-infihuila-text">---</span></p>
-                        <!-- 5. Total Tasa Anual (Antes: Tasa Nominal Anual Final) -->
-                        <p class="flex justify-between items-center"><span class="font-medium" id="detalle-tasa-label">5. Total Tasa Anual:</span> <span id="detalle-tasa-final" class="text-md font-bold text-infihuila-text">---</span></p>
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">4. Tasa Mensual Final:</span> <span id="detalle-tasa-mensual" class="font-bold text-infihuila-text">---</span></p>
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium" id="detalle-tasa-label">5. Total Tasa Anual:</span> <span id="detalle-tasa-final" class="text-xs sm:text-sm font-bold text-infihuila-text">---</span></p>
                     </div>
-                    <div class="mt-4 pt-2 border-t border-gray-200">
-                         <h4 class="text-lg font-bold mb-3 text-infihuila-blue">Totales del Crédito</h4>
-                         <p class="flex justify-between items-center text-sm"><span class="font-medium">Capital Total Amortizado:</span> <span id="detalle-capital-total" class="font-semibold text-infihuila-text">---</span></p>
-                         <p class="flex justify-between items-center text-sm"><span class="font-medium">Intereses Totales Pagados:</span> <span id="detalle-interes-total" class="font-semibold text-infihuila-green">---</span></p>
+                    <div class="mt-4 pt-2 border-t border-gray-200 space-y-1 text-xs sm:text-sm">
+                         <h4 class="text-base sm:text-lg font-bold mb-2 text-infihuila-blue">III. Totales del Crédito</h4>
+                         <p class="flex justify-between items-center gap-4"><span class="font-medium">Capital Total Amortizado:</span> <span id="detalle-capital-total" class="font-semibold text-infihuila-text">---</span></p>
+                         <p class="flex justify-between items-center gap-4"><span class="font-medium">Intereses Totales Pagados:</span> <span id="detalle-interes-total" class="font-semibold text-infihuila-green">---</span></p>
                     </div>
                 </div>
 
@@ -157,43 +171,41 @@
 
             <!-- Contenedor de Gráficos -->
             <div class="lg:col-span-2 space-y-6">
-
                 <!-- Gráfico de Torta (Capital vs Interés) -->
-                <div class="card p-6">
-                    <h3 class="text-2xl font-bold mb-4 text-infihuila-blue">Gráfica del porcentaje de participación del crédito</h3>
-                    <div class="relative h-64 md:h-80">
+                <div class="card p-5 sm:p-6 lg:p-6">
+                    <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">IV. Gráfica del porcentaje de participación del crédito</h3>
+                    <div class="relative h-64 md:h-80 lg:h-96">
                         <canvas id="pieChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Gráfico de Barras (Capital e Interés Anual) -->
-                <div class="card p-6">
-                    <h3 class="text-2xl font-bold mb-4 text-infihuila-blue">Gráfica del comportamiento del crédito por vigencia</h3>
-                    <div class="relative h-80 md:h-96">
+                <div class="card p-5 sm:p-6 lg:p-6">
+                    <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">V. Gráfica del comportamiento del crédito por vigencia</h3>
+                    <div class="relative h-72 sm:h-80 md:h-96 lg:h-[420px]">
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
-
             </div>
         </main>
 
-        <!-- Tabla de Amortización -->
+        <!-- Tabla de Amortización (Identificador 'tabla-a-exportar' añadido) -->
         <section id="tabla-seccion" class="mt-8 hidden">
-            <div class="card p-6">
-                <h3 class="text-2xl font-bold mb-4 text-infihuila-blue">Tabla de Amortización Completa</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+            <div class="card p-5 sm:p-6 lg:p-6">
+                <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">VI. Tabla de Amortización Completa</h3>
+                <div class="w-full overflow-x-auto">
+                    <table id="tabla-a-exportar" class="min-w-full text-xs sm:text-sm divide-y divide-gray-200">
                         <thead>
-                            <tr class="bg-infihuila-blue text-white text-sm uppercase tracking-wider">
-                                <th class="px-3 py-3 text-left">N.º Cuota</th>
-                                <th class="px-3 py-3 text-left">Fecha (Est.)</th>
-                                <th class="px-3 py-3 text-right">Cuota Total</th>
-                                <th class="px-3 py-3 text-right">Interés</th>
-                                <th class="px-3 py-3 text-right">Capital</th>
-                                <th class="px-3 py-3 text-right">Saldo Final</th>
+                            <tr class="bg-infihuila-blue text-white text-[11px] sm:text-xs uppercase tracking-wider">
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-left">N.º Cuota</th>
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-left">Fecha (Est.)</th>
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Cuota Total</th>
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Interés</th>
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Capital</th>
+                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Saldo Final</th>
                             </tr>
                         </thead>
-                        <tbody id="amortization-table-body" class="bg-white divide-y divide-gray-200 text-sm">
+                        <tbody id="amortization-table-body" class="bg-white divide-y divide-gray-200">
                             <!-- Filas de la tabla se insertarán aquí -->
                         </tbody>
                     </table>
@@ -201,7 +213,7 @@
             </div>
         </section>
 
-        <footer class="mt-8 text-center text-xs text-gray-500">
+        <footer class="mt-8 text-center text-[10px] sm:text-xs text-gray-500 leading-relaxed">
             © 2025 INFIHUILA - Instituto de Financiamiento, Promoción y Desarrollo del Huila<br>
             Documento controlado. Cualquier impresión es copia no controlada.
         </footer>
@@ -214,25 +226,101 @@
         let barChartInstance = null;
         const MONTHS_IN_YEAR = 12;
 
+        // Variable para almacenar la tabla de amortización para la exportación
+        let lastAmortizationTableData = []; 
+        
+        // --- FUNCIONES DE EXPORTACIÓN ---
+
         // Función de formato de números a moneda (COP)
         const formatCurrency = (amount) => {
-            // Se usa el redondeo estándar de JavaScript, luego se le aplica el formato
             return new Intl.NumberFormat('es-CO', {
                 style: 'currency',
                 currency: 'COP',
                 minimumFractionDigits: 0
-            }).format(Math.round(amount)); // Redondeo al peso más cercano
+            }).format(Math.round(amount));
         };
 
-        // Función para simular el crédito (AHORA CON AMORTIZACIÓN DE CAPITAL CONSTANTE EXACTA)
+        // Función para exportar a Excel
+        function exportToExcel() {
+            if (lastAmortizationTableData.length === 0) {
+                console.error("No hay datos de amortización para exportar.");
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(lastAmortizationTableData.map(item => ({
+                'N.º Cuota': item.nCuota,
+                'Fecha (Est.)': item.fecha,
+                'Cuota Total': Math.round(item.cuota), // Usar el valor numérico (redondeado)
+                'Interés': Math.round(item.interes),
+                'Capital': Math.round(item.capital),
+                'Saldo Final': Math.round(item.saldoFinal)
+            })));
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Amortizacion Credito");
+            XLSX.writeFile(wb, "Tabla_Amortizacion_INFIHUILA.xlsx");
+        }
+
+        // Función para exportar a PDF
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            
+            // Usar html2canvas para capturar la tabla como imagen
+            const tableElement = document.getElementById('tabla-a-exportar');
+
+            if (!tableElement) {
+                console.error("Elemento de tabla no encontrado para PDF.");
+                return;
+            }
+
+            html2canvas(tableElement, { 
+                scale: 2, // Aumentar escala para mejor calidad
+                windowWidth: document.querySelector('.max-w-6xl').scrollWidth, // Capturar el ancho de la tabla correctamente
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 550; // Ancho fijo para la imagen del PDF
+                const pageHeight = 792; 
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 40; // Margen superior inicial
+
+                // Título
+                doc.setFontSize(18);
+                doc.text("VI. Tabla de Amortización - INFIHUILA", 40, 30);
+                
+                // Añadir imagen al PDF
+                doc.addImage(imgData, 'PNG', 30, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // Si la tabla es muy larga, añadir más páginas
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    doc.addPage();
+                    doc.addImage(imgData, 'PNG', 30, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                doc.save('Tabla_Amortizacion_INFIHUILA.pdf');
+            });
+        }
+        
+        // --- FIN FUNCIONES DE EXPORTACIÓN ---
+
+
+        // Función para simular el crédito (AMORTIZACIÓN DE CAPITAL CONSTANTE)
         async function simularCredito() {
-            // Mostrar spinner y deshabilitar botón
-            const button = document.querySelector('button');
+            const button = document.querySelector('button[onclick="simularCredito()"]');
             const spinner = document.getElementById('loading-spinner');
+            const excelBtn = document.getElementById('download-excel-btn');
+            const pdfBtn = document.getElementById('download-pdf-btn');
+
             spinner.classList.remove('hidden');
             button.disabled = true;
+            excelBtn.disabled = true;
+            pdfBtn.disabled = true;
+            document.getElementById('tabla-seccion').classList.add('hidden'); // Ocultar tabla al inicio
 
-            // Obtener valores de entrada
             const monto = parseFloat(document.getElementById('monto').value);
             const plazo = parseInt(document.getElementById('plazo').value);
             const periodoGracia = parseInt(document.getElementById('periodo-gracia').value);
@@ -240,46 +328,32 @@
             const tasaBaseInput = parseFloat(document.getElementById('tasa-base-input').value);
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
 
-            // Validación básica de entradas
             if (isNaN(monto) || monto <= 0 || isNaN(plazo) || plazo <= 0 || isNaN(spread) || spread < 0 || isNaN(tasaBaseInput) || tasaBaseInput < 0 || isNaN(periodoGracia) || periodoGracia < 0 || periodoGracia > plazo) {
                 if (periodoGracia > plazo) {
                     console.warn('Advertencia: El Periodo de Gracia no puede ser mayor al Plazo Total. Se ejecutará el cálculo estándar (sin periodo de gracia).');
                     document.getElementById('periodo-gracia').value = 0;
-                } else if (isNaN(monto) || monto <= 0 || isNaN(plazo) || plazo <= 0 || isNaN(spread) || spread < 0 || isNaN(tasaBaseInput) || tasaBaseInput < 0) {
-                     console.error('Error de validación: Por favor, ingrese valores válidos para Monto, Plazo, Spread y Tasa Base.');
-                }
-                
-                if (periodoGracia > plazo) {
-                    simularCredito();
-                    return;
-                } else if (isNaN(monto) || monto <= 0 || isNaN(plazo) || plazo <= 0 || isNaN(spread) || spread < 0 || isNaN(tasaBaseInput) || tasaBaseInput < 0) {
+                } else {
+                    console.error('Error de validación: Por favor, ingrese valores válidos.');
                     spinner.classList.add('hidden');
                     button.disabled = false;
                     return;
                 }
             }
 
-
-            // 1. Cálculo de Tasa de Interés según el tipo seleccionado (TNA o E.A.)
             const tasaBase = tasaBaseInput / 100;
             const tasaAnualTotal = tasaBase + spread;
             let tasaMensual = 0;
-            let tasaEtiqueta = '5. Total Tasa Anual:'; // Etiqueta constante
+            let tasaEtiqueta = '5. Total Tasa Anual:';
 
             if (tasaReferenciaKey === 'TNA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
-                // FÓRMULA DE TNA (Nominal Anual/12): Para resultados que coinciden con su tabla
-                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR; 
+                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR;
                 document.getElementById('tasa-explicacion').textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
             } else if (tasaReferenciaKey === 'EA') {
-                // FÓRMULA DE E.A. (Efectiva Anual): Para cálculo compuesto financiero real
-                // TEM = (1 + E.A.)^(1/12) - 1
                 tasaMensual = Math.pow(1 + tasaAnualTotal, 1 / MONTHS_IN_YEAR) - 1;
                 document.getElementById('tasa-explicacion').textContent = 'TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).';
             }
             
-            // Actualizar la etiqueta del detalle de la tasa anual
             document.getElementById('detalle-tasa-label').textContent = tasaEtiqueta;
-
 
             let capitalFijoAmortizacion = 0;
             let interesPrimeraAmortizacion = 0;
@@ -287,86 +361,69 @@
 
             const plazoAmortizacion = plazo - periodoGracia;
             
-            // 2. Cálculo del Capital Fijo a amortizar y la Cuota Máxima
             if (plazoAmortizacion > 0) {
-                // Cálculo del componente fijo de capital
-                capitalFijoAmortizacion = monto / plazoAmortizacion; 
-                
-                // La cuota máxima es la primera cuota de amortización (capital fijo + interés sobre el saldo completo)
+                capitalFijoAmortizacion = monto / plazoAmortizacion;
                 interesPrimeraAmortizacion = monto * tasaMensual;
                 cuotaFijaDisplay = capitalFijoAmortizacion + interesPrimeraAmortizacion;
-
-                // Si hay gracia, la cuota máxima es esta primera cuota de amortización.
-                // Si NO hay gracia (periodoGracia=0), la primera cuota total (mes 1) es la máxima.
             } else {
-                cuotaFijaDisplay = monto; // Valor de emergencia
+                cuotaFijaDisplay = monto;
                 capitalFijoAmortizacion = 0;
                 interesPrimeraAmortizacion = 0;
             }
-
 
             let saldoPendiente = monto;
             let totalInteres = 0;
             let totalCapital = 0;
             const tablaAmortizacion = [];
             const amortizacionAnual = {};
-            const fechaInicio = new Date(); // Fecha de inicio para la tabla
+            const fechaInicio = new Date();
 
-            // 4. Generación de la Tabla de Amortización (Capital Constante + Gracia)
             for (let i = 1; i <= plazo; i++) {
-                // Cálculo de la fecha de la cuota
+                // Pequeño retraso para simular carga
+                await new Promise(r => setTimeout(r, 0)); 
+
                 const fechaCuota = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + i, fechaInicio.getDate());
                 const fechaFormateada = fechaCuota.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
 
-                // El interés se calcula sobre el saldo pendiente del mes anterior
                 const interes = saldoPendiente * tasaMensual;
                 let cuotaActual = 0;
                 let capital = 0;
 
                 if (i <= periodoGracia) {
-                    // FASE 1: Periodo de Gracia (Cuota = solo interés. Capital amortizado = 0)
                     cuotaActual = interes;
                     capital = 0;
                 } else {
-                    // FASE 2: Periodo de Amortización (Capital Fijo + Interés variable)
-                    capital = capitalFijoAmortizacion; // Componente de capital es constante
-                    cuotaActual = capital + interes; // Cuota Total es decreciente
+                    capital = capitalFijoAmortizacion;
+                    cuotaActual = capital + interes;
                 }
 
-                // Cálculo del nuevo saldo
                 let saldoFinal = saldoPendiente - capital;
 
-                // AJUSTE FINAL: En la última cuota, el capital debe ser exactamente el saldo pendiente.
-                // Usamos un pequeño margen para capturar errores de coma flotante
-                if (i === plazo || saldoFinal < 100) { 
+                // Ajuste para la última cuota
+                if (i === plazo || saldoFinal < 1) { // Pequeño margen de error
                     capital = saldoPendiente;
                     cuotaActual = capital + interes;
                     saldoFinal = 0;
                 }
 
-                // Actualizar totales y saldo
                 totalInteres += interes;
                 totalCapital += capital;
                 saldoPendiente = saldoFinal;
 
-                // Redondeo al peso más cercano para el display, manteniendo el cálculo interno preciso
                 const cuotaRounded = Math.round(cuotaActual);
                 const interesRounded = Math.round(interes);
                 const capitalRounded = Math.round(capital);
                 const saldoFinalRounded = Math.round(saldoFinal);
 
-
-                // Registro de la cuota
                 tablaAmortizacion.push({
                     nCuota: i,
                     fecha: fechaFormateada,
-                    cuota: cuotaRounded, // Cuota Total (decreciente en Fase 2)
+                    cuota: cuotaRounded,
                     interes: interesRounded,
                     capital: capitalRounded,
                     saldoFinal: saldoFinalRounded
                 });
 
-                // Registro para el Gráfico Anual (usando valores redondeados para consistencia)
                 const year = fechaCuota.getFullYear();
                 if (!amortizacionAnual[year]) {
                     amortizacionAnual[year] = { capital: 0, interes: 0 };
@@ -374,32 +431,30 @@
                 amortizacionAnual[year].capital += capitalRounded;
                 amortizacionAnual[year].interes += interesRounded;
             }
+            
+            // Guardar datos para exportación
+            lastAmortizationTableData = tablaAmortizacion;
 
-            // 5. Renderizar Gráficos
             renderPieChart(totalCapital, totalInteres);
             renderBarChart(amortizacionAnual);
             
-            // 6. Actualizar panel de Detalles del crédito (ACTUALIZADO)
             document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaFijaDisplay));
             document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijoAmortizacion));
             document.getElementById('detalle-interes-inicial').textContent = formatCurrency(Math.round(interesPrimeraAmortizacion));
             document.getElementById('detalle-tasa-mensual').textContent = (tasaMensual * 100).toFixed(4) + '%';
             document.getElementById('detalle-tasa-final').textContent = (tasaAnualTotal * 100).toFixed(4) + '%';
             
-            // Totales
             document.getElementById('detalle-capital-total').textContent = formatCurrency(Math.round(totalCapital));
             document.getElementById('detalle-interes-total').textContent = formatCurrency(Math.round(totalInteres));
             
-            // 7. Renderizar Tabla
             renderAmortizationTable(tablaAmortizacion);
             document.getElementById('tabla-seccion').classList.remove('hidden');
 
-            // Ocultar spinner y habilitar botón
             spinner.classList.add('hidden');
             button.disabled = false;
+            excelBtn.disabled = false; // Habilitar botones de descarga
+            pdfBtn.disabled = false;
         }
-
-        // --- Funciones de Gráficos (Sin cambios funcionales, solo se asegura redondeo en inputs) ---
 
         function renderPieChart(capital, interes) {
             const ctx = document.getElementById('pieChart').getContext('2d');
@@ -413,10 +468,10 @@
                 data: {
                     labels: ['Capital Principal', 'Intereses Totales'],
                     datasets: [{
-                        data: [Math.round(capital), Math.round(interes)], // Redondeo para el gráfico
+                        data: [Math.round(capital), Math.round(interes)],
                         backgroundColor: [
-                            '#006C72', // Nuevo Color Primario INFIHUILA (Capital)
-                            '#CCD400', // Nuevo Color Secundario INFIHUILA (Interés)
+                            '#006C72',
+                            '#CCD400',
                         ],
                         hoverOffset: 15
                     }]
@@ -429,14 +484,14 @@
                             position: 'bottom',
                             labels: {
                                 font: {
-                                    size: 14
+                                    size: 12
                                 }
                             }
                         },
                         title: {
                             display: true,
-                            text: 'Gráfica del porcentaje de participación del crédito', // Título Modificado
-                            font: { size: 16 }
+                            text: 'IV. Gráfica del porcentaje de participación del crédito', // Título actualizado
+                            font: { size: 14 }
                         },
                         tooltip: {
                             callbacks: {
@@ -478,14 +533,14 @@
                         {
                             label: 'Capital Amortizado',
                             data: capitalData,
-                            backgroundColor: '#006C72', // Nuevo Color Primario INFIHUILA
+                            backgroundColor: '#006C72',
                             borderColor: '#006C72',
                             borderWidth: 1,
                         },
                         {
                             label: 'Intereses Pagados',
                             data: interesData,
-                            backgroundColor: '#CCD400', // Nuevo Color Secundario INFIHUILA
+                            backgroundColor: '#CCD400',
                             borderColor: '#CCD400',
                             borderWidth: 1,
                         }
@@ -498,8 +553,8 @@
                         legend: { position: 'top' },
                         title: {
                             display: true,
-                            text: 'Gráfica del comportamiento del crédito por vigencia', // Título Modificado
-                            font: { size: 16 }
+                            text: 'V. Gráfica del comportamiento del crédito por vigencia', // Título actualizado
+                            font: { size: 14 }
                         },
                         tooltip: {
                             callbacks: {
@@ -516,17 +571,20 @@
                     scales: {
                         x: {
                             stacked: false,
-                            title: { display: true, text: 'Año' }
+                            title: { display: true, text: 'Año' },
+                            ticks: {
+                                font: { size: 10 }
+                            }
                         },
                         y: {
                             stacked: false,
                             beginAtZero: true,
                             title: { display: true, text: 'Monto ($)' },
-                            // Formato de los ticks del eje Y para mostrar valores grandes de manera legible
                             ticks: {
-                                callback: function(value, index, values) {
+                                callback: function(value) {
                                     return formatCurrency(value);
-                                }
+                                },
+                                font: { size: 10 }
                             }
                         }
                     }
@@ -536,38 +594,34 @@
 
         function renderAmortizationTable(tabla) {
             const tbody = document.getElementById('amortization-table-body');
-            tbody.innerHTML = ''; // Limpiar tabla
+            tbody.innerHTML = '';
 
             tabla.forEach(item => {
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50';
 
-                // Aplica un estilo diferente a las filas que marcan el final del año (si no es la última cuota)
                 const isEndOfYear = item.nCuota % MONTHS_IN_YEAR === 0 && item.nCuota !== tabla.length;
-                // Usamos el nuevo color secundario para el borde
                 if (isEndOfYear) {
                     row.classList.add('border-b-4', 'border-infihuila-green', 'font-semibold');
                 }
 
                 row.innerHTML = `
-                    <td class="px-3 py-2 whitespace-nowrap">${item.nCuota}</td>
-                    <td class="px-3 py-2 whitespace-nowrap">${item.fecha}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-right">${formatCurrency(item.cuota)}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-green">${formatCurrency(item.interes)}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-blue">${formatCurrency(item.capital)}</td>
-                    <td class="px-3 py-2 whitespace-nowrap text-right font-medium">${formatCurrency(item.saldoFinal)}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap">${item.nCuota}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap">${item.fecha}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right">${formatCurrency(item.cuota)}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right text-infihuila-green">${formatCurrency(item.interes)}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right text-infihuila-blue">${formatCurrency(item.capital)}</td>
+                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right font-medium">${formatCurrency(item.saldoFinal)}</td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        // Función para actualizar la explicación y la etiqueta al cambiar el tipo de tasa
         function updateTasaLabels() {
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
             const tasaExplicacion = document.getElementById('tasa-explicacion');
             const tasaLabel = document.getElementById('detalle-tasa-label');
 
-            // Etiqueta constante para el punto 5
             tasaLabel.textContent = '5. Total Tasa Anual:'; 
 
             if (tasaReferenciaKey === 'EA') {
@@ -576,16 +630,16 @@
                 tasaExplicacion.textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
             }
             
-            // Recalcular el crédito si se cambia la referencia
+            // Ejecutar simulación con los nuevos parámetros
             simularCredito();
         }
 
-        // Inicialización al cargar la página
         window.onload = function() {
-            // Inicialización de las opciones del select de periodo de gracia
+            // Rellenar opciones de periodo de gracia
             const initialSelect = document.getElementById('periodo-gracia');
-            if (initialSelect.options.length === 0) {
-                 for (let i = 0; i <= 24; i++) {
+            if (initialSelect.options.length === 1) {
+                initialSelect.innerHTML = '';
+                for (let i = 0; i <= 24; i++) {
                     const option = document.createElement('option');
                     option.value = i;
                     option.textContent = i + ' Meses';
@@ -596,11 +650,10 @@
                 }
             }
 
-
-            // Ejecutar simulación inicial con valores por defecto
+            // Inicializar simulación
             simularCredito();
             
-            // Agregar event listener a los inputs para recalcular automáticamente
+            // Event listeners para re-simular al cambiar inputs
             document.querySelectorAll('#monto, #plazo, #spread, #tasa-base-input, #periodo-gracia').forEach(input => {
                 input.addEventListener('change', simularCredito);
                 input.addEventListener('keyup', (e) => {
@@ -608,10 +661,7 @@
                 });
             });
 
-            // Listener específico para el cambio de tipo de tasa
             document.getElementById('tasa-referencia').addEventListener('change', updateTasaLabels);
-
-            // Asegurar que la explicación inicial es correcta (debería ser TNA por defecto)
             updateTasaLabels();
         };
     </script>
