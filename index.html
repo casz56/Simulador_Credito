@@ -12,11 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Carga de jsPDF y html2canvas para la exportación a PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Se mantiene html2canvas por si se necesita para capturar gráficos, aunque la tabla se manejará con AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Carga de jsPDF-AutoTable para manejar tablas largas con saltos de página (NUEVA INCLUSIÓN) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
 
     <!-- Configuración de la paleta de colores de Infihuila (Aproximación institucional) -->
     <script>
@@ -62,7 +58,7 @@
                 <!-- Logo superior izquierda -->
                 <div class="w-full sm:w-auto flex justify-start sm:justify-start">
                     <!-- Se usa una URL de placeholder ya que la imagen local no está disponible -->
-                    <img src="Logo_Infi.png" alt="Logo INFIHUILA" class="h-14 sm:h-16 w-auto object-contain">
+                    <img src="Logo Infi.jpeg" alt="Logo INFIHUILA" class="h-14 sm:h-16 w-auto object-contain">
                 </div>
 
                 <!-- Títulos centrados (Color Principal en Verde Institucional) -->
@@ -71,11 +67,9 @@
                         SIMULADOR DE CRÉDITOS
                     </h1>
                     <!-- Subtítulo en color azul institucional para contraste -->
-                    <h2 class="text-lg sm:text-xl lg:text-2xl font-normal mt-1 text-infihuila-green leading-snug">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-normal mt-1 text-infihuila-blue leading-snug">
                         Gestión Comercial - INFIHUILA
                     </h2>
-                    <!-- Muestra el ID de usuario para la colaboración -->
-                    <p id="user-id-display" class="text-xs text-gray-500 mt-1">Usuario: Cargando...</p>
                 </div>
 
                 <!-- Botones de Descarga -->
@@ -96,9 +90,9 @@
                 <!-- TÍTULO I. INFORMACIÓN DEL CRÉDITO -->
                 <div class="flex justify-between items-center mb-4 gap-2">
                     <h3 class="text-xl sm:text-2xl font-bold text-infihuila-blue">I. Información del crédito</h3>
-                    <!-- Consecutivo Dinámico -->
-                    <button id="consecutivo-display" onclick="generarConsecutivo()" class="px-3 py-1 text-[10px] sm:text-xs lg:text-sm font-semibold border border-infihuila-blue text-infihuila-blue rounded-full shadow-sm whitespace-nowrap cursor-pointer">
-                        Consecutivo N.º ---
+                    <!-- Botón Consecutivo (MOVIDO AQUÍ) -->
+                    <button class="px-3 py-1 text-[10px] sm:text-xs lg:text-sm font-semibold border border-infihuila-blue text-infihuila-blue rounded-full shadow-sm hover:bg-infihuila-blue hover:text-white transition duration-300 ease-in-out whitespace-nowrap">
+                        Consecutivo N.º 001-2025
                     </button>
                 </div>
 
@@ -113,14 +107,24 @@
                     <label for="plazo" class="block text-sm font-medium mb-1">Plazo (Meses)</label>
                     <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
+
+                <!-- Selección Tipo de Amortización (NUEVO) -->
+                <div class="mb-4">
+                    <label for="tipo-amortizacion" class="block text-sm font-medium mb-1">Tipo de Amortización</label>
+                    <select id="tipo-amortizacion" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                        <option value="Constante">Capital Constante (Alemán)</option>
+                        <option value="Fija">Cuota Fija (Francés)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Define si el capital o la cuota se mantiene constante después del periodo de gracia.</p>
+                </div>
                 
                 <!-- Input Periodo de Gracia -->
                 <div class="mb-4">
                     <label for="periodo-gracia" class="block text-sm font-medium mb-1">Periodo de Gracia (Meses)</label>
                     <select id="periodo-gracia" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                        <option value="0">0 Meses</option>
+                        <!-- Opciones se llenan dinámicamente en JS -->
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Durante este periodo solo se pagan intereses. Luego, el capital a amortizar es fijo.</p>
+                    <p class="text-xs text-gray-500 mt-1">Durante este periodo solo se pagan intereses. Luego, aplica la amortización seleccionada.</p>
                 </div>
 
                 <!-- Selección Tasa de Referencia (Tipo) -->
@@ -147,30 +151,36 @@
                     <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
 
-                <!-- Botones de Acción -->
-                <div class="flex flex-col gap-2">
-                    <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
-                        <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
-                        Simular Crédito
-                    </button>
-                </div>
+                <!-- Botón de Simulación -->
+                <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
+                    <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
+                    Simular Crédito
+                </button>
 
                 <!-- DETALLES DEL CRÉDITO (Resumen actualizado) -->
                 <div id="detalles-credito" class="mt-6 card p-4 border border-infihuila-blue bg-white shadow-md">
                     <h4 class="text-base sm:text-lg font-bold mb-3 text-infihuila-blue">II. Detalles del crédito (Valores Iniciales)</h4>
                     <div class="space-y-2 text-xs sm:text-sm">
-                        <p class="flex justify-between items-center gap-4"><span class="font-medium">1. Cuota Mensual:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
+                        <!-- Cuota/Capital Fijo -->
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium" id="label-cuota-fija">1. Cuota Mensual Inicial:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
                         <hr class="border-gray-200">
-                        <p class="flex justify-between items-center gap-4"><span class="font-medium">2. Capital Mensual Fijo:</span> <span id="detalle-capital-fijo" class="font-semibold text-infihuila-text">---</span></p>
+                        <!-- Capital Fijo (si aplica) -->
+                        <p id="row-capital-fijo" class="flex justify-between items-center gap-4"><span class="font-medium">2. Capital Fijo Amortizado:</span> <span id="detalle-capital-fijo" class="font-semibold text-infihuila-text">---</span></p>
+                        <!-- Interés Inicial -->
                         <p class="flex justify-between items-center gap-4"><span class="font-medium">3. Intereses Mensuales (Inicial):</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
                         <hr class="border-gray-200">
-                        <p class="flex justify-between items-center gap-4"><span class="font-medium">4. Tasa Mensual Final:</span> <span id="detalle-tasa-mensual" class="font-bold text-infihuila-text">---</span></p>
-                        <p class="flex justify-between items-center gap-4"><span class="font-medium" id="detalle-tasa-label">5. Total Tasa Anual:</span> <span id="detalle-tasa-final" class="text-xs sm:text-sm font-bold text-infihuila-text">---</span></p>
+                        <!-- Tasa Mensual Final -->
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">4. Tasa Mensual (TEM/TNM):</span> <span id="detalle-tasa-mensual" class="font-bold text-infihuila-text">---</span></p>
+                        <!-- Tasa Anual Efectiva -->
+                        <p class="flex justify-between items-center gap-4"><span class="font-medium">5. Tasa Efectiva Anual (E.A.):</span> <span id="detalle-tasa-efectiva" class="font-bold text-infihuila-text">---</span></p>
+                         <!-- Tasa Anual Nominal (si es TNA) -->
+                        <p id="row-tasa-nominal" class="flex justify-between items-center gap-4"><span class="font-medium">6. Tasa Nominal Anual (TNA):</span> <span id="detalle-tasa-nominal" class="text-xs sm:text-sm font-bold text-infihuila-text">---</span></p>
                     </div>
                     <div class="mt-4 pt-2 border-t border-gray-200 space-y-1 text-xs sm:text-sm">
                          <h4 class="text-base sm:text-lg font-bold mb-2 text-infihuila-blue">III. Totales del Crédito</h4>
                          <p class="flex justify-between items-center gap-4"><span class="font-medium">Capital Total Amortizado:</span> <span id="detalle-capital-total" class="font-semibold text-infihuila-text">---</span></p>
                          <p class="flex justify-between items-center gap-4"><span class="font-medium">Intereses Totales Pagados:</span> <span id="detalle-interes-total" class="font-semibold text-infihuila-green">---</span></p>
+                         <p class="flex justify-between items-center gap-4"><span class="font-medium font-bold">Total Pagado:</span> <span id="detalle-total-pagado" class="font-extrabold text-infihuila-blue">---</span></p>
                     </div>
                 </div>
 
@@ -227,149 +237,6 @@
 
     </div>
 
-    <!-- Firebase Imports -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, runTransaction, collection, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Variables globales de Firebase (accesibles en el scope global)
-        window.db = null;
-        window.auth = null;
-        window.userId = null;
-        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-infihuila-app';
-        window.lastSimulationData = null; // Para guardar el resultado de la última simulación
-
-        // Inicializa Firebase y la Autenticación
-        window.initFirebase = async function() {
-            try {
-                // setLogLevel('debug'); // Descomentar para debug de Firestore
-
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = initializeApp(firebaseConfig);
-                window.db = getFirestore(app);
-                window.auth = getAuth(app);
-                
-                // Autenticación usando el token de Canvas o anónima
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(window.auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(window.auth);
-                }
-                
-                // Escucha el estado de autenticación
-                onAuthStateChanged(window.auth, (user) => {
-                    if (user) {
-                        window.userId = user.uid;
-                        document.getElementById('user-id-display').textContent = `Usuario: ${user.uid}`;
-                        // Una vez autenticado, carga el consecutivo y ejecuta la simulación
-                        window.getConsecutivo();
-                    } else {
-                        window.userId = crypto.randomUUID(); // Fallback ID
-                        document.getElementById('user-id-display').textContent = `Usuario: No autenticado (${window.userId.substring(0, 8)}...)`;
-                        window.simularCredito(); // Ejecuta simulación sin consecutivo real
-                    }
-                });
-
-            } catch (error) {
-                console.error("Error al inicializar Firebase o autenticar:", error);
-                document.getElementById('user-id-display').textContent = `Usuario sin conexión`;
-                window.simularCredito(); // Intentar simular localmente
-            }
-        };
-
-        // Obtiene el número consecutivo de simulación
-        window.getConsecutivo = async function() {
-            if (!window.db) return 1;
-
-            const consecutivoRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'metadata', 'consecutivo');
-            
-            try {
-                const docSnap = await getDoc(consecutivoRef);
-                const currentNumber = docSnap.exists() ? docSnap.data().lastNumber + 1 : 1;
-                document.getElementById('consecutivo-display').textContent = `Consecutivo N.º ${String(currentNumber).padStart(3, '0')}-${new Date().getFullYear()}`;
-                return currentNumber;
-            } catch (error) {
-                console.warn("No se pudo obtener el consecutivo. Usando valor 1.", error);
-                document.getElementById('consecutivo-display').textContent = `Consecutivo N.º 001-${new Date().getFullYear()}`;
-                return 1;
-            }
-        };
-
-        // Guarda la simulación en Firestore y actualiza el consecutivo
-        window.saveSimulation = async function() {
-            if (!window.db || !window.lastSimulationData) {
-                console.error("No se puede guardar: Base de datos no inicializada o no hay datos de simulación.");
-                return;
-            }
-
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Guardando...';
-
-            try {
-                // 1. Ejecutar Transacción para obtener e incrementar el consecutivo
-                const newConsecutivo = await runTransaction(window.db, async (transaction) => {
-                    const consecutivoRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'metadata', 'consecutivo');
-                    const consecutivoDoc = await transaction.get(consecutivoRef);
-                    
-                    let newNumber;
-                    if (consecutivoDoc.exists()) {
-                        const currentNumber = consecutivoDoc.data().lastNumber;
-                        newNumber = currentNumber + 1;
-                    } else {
-                        newNumber = 1;
-                    }
-
-                    // Actualiza el documento del consecutivo
-                    transaction.set(consecutivoRef, { lastNumber: newNumber, updatedAt: serverTimestamp() });
-                    return newNumber;
-                });
-                
-                // 2. Crear el documento de la simulación
-                const simulationRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'simulaciones');
-                const simulationToSave = {
-                    ...window.lastSimulationData.inputs, // Inputs (monto, plazo, tasa, etc.)
-                    ...window.lastSimulationData.results, // Resultados (total capital, total interes, etc.)
-                    consecutivo: newConsecutivo,
-                    userId: window.userId,
-                    createdAt: serverTimestamp(),
-                    // La tabla de amortización se serializa a JSON ya que es un array grande
-                    amortizationTable: JSON.stringify(window.lastSimulationData.amortizationTable)
-                };
-
-                // 3. Guardar la simulación
-                await setDoc(doc(simulationRef, `sim-${newConsecutivo}-${new Date().getFullYear()}`), simulationToSave);
-
-                // 4. Actualizar la UI
-                document.getElementById('consecutivo-display').textContent = `Consecutivo N.º ${String(newConsecutivo + 1).padStart(3, '0')}-${new Date().getFullYear()}`;
-                saveBtn.textContent = '¡Guardado! Crear Nueva Simulación';
-                saveBtn.classList.remove('bg-gray-500', 'hover:bg-infihuila-blue');
-                saveBtn.classList.add('bg-infihuila-green', 'hover:bg-infihuila-green/80');
-
-                // Desactivar temporalmente el botón de guardar hasta la próxima simulación
-                setTimeout(() => {
-                    saveBtn.disabled = true;
-                    saveBtn.textContent = 'Guardar Simulación';
-                    saveBtn.classList.remove('bg-infihuila-green', 'hover:bg-infihuila-green/80');
-                    saveBtn.classList.add('bg-gray-500', 'hover:bg-infihuila-blue');
-                }, 3000);
-
-            } catch (error) {
-                console.error("Fallo al guardar o al actualizar el consecutivo:", error);
-                saveBtn.textContent = 'Error al Guardar';
-                saveBtn.disabled = false;
-            }
-        };
-
-        // Habilita el guardado después de una simulación exitosa
-        window.enableSaveButton = function() {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Guardar Simulación';
-            saveBtn.classList.remove('bg-infihuila-green', 'hover:bg-infihuila-green/80');
-            saveBtn.classList.add('bg-gray-500', 'hover:bg-infihuila-blue');
-        }
-    </script>
-
     <script>
         // Inicialización de variables y constantes
         let pieChartInstance = null;
@@ -378,42 +245,24 @@
 
         // Variable para almacenar la tabla de amortización para la exportación
         let lastAmortizationTableData = []; 
-        // --- FUNCIONES DE CONSECUTIVO LOCAL (sin Firebase) ---
-        function initConsecutivoLocal() {
-            try {
-                let n = localStorage.getItem("consecutivoInfihuila");
-                if (!n) {
-                    n = 1;
-                    localStorage.setItem("consecutivoInfihuila", n);
-                }
-                const btn = document.getElementById("consecutivo-display");
-                if (btn) {
-                    btn.textContent = "Consecutivo N.º " + String(n).padStart(3, "0") + "-" + new Date().getFullYear();
-                }
-            } catch (e) {
-                console.warn("No se pudo inicializar el consecutivo local:", e);
-            }
-        }
-
-        function generarConsecutivo() {
-            try {
-                let n = localStorage.getItem("consecutivoInfihuila");
-                if (!n) {
-                    n = 1;
-                } else {
-                    n = parseInt(n) + 1;
-                }
-                localStorage.setItem("consecutivoInfihuila", n);
-                const btn = document.getElementById("consecutivo-display");
-                if (btn) {
-                    btn.textContent = "Consecutivo N.º " + String(n).padStart(3, "0") + "-" + new Date().getFullYear();
-                }
-            } catch (e) {
-                console.warn("No se pudo actualizar el consecutivo local:", e);
-            }
-        }
-
         
+        // --- FUNCIONES DE CÁLCULO FINANCIERO ---
+
+        /**
+         * Calcula el valor de la cuota fija (anualidad) para el Sistema Francés.
+         * Fórmula: C = P * [ i * (1 + i)^n ] / [ (1 + i)^n - 1 ]
+         * @param {number} P Monto principal (Principal)
+         * @param {number} i Tasa de interés mensual (Interés)
+         * @param {number} n Número de períodos (Plazo en meses)
+         * @returns {number} Valor de la cuota fija.
+         */
+        function calcularCuotaFija(P, i, n) {
+            if (i === 0) return P / n; // Evitar división por cero si el interés es 0
+            
+            const potencia = Math.pow(1 + i, n);
+            return P * (i * potencia) / (potencia - 1);
+        }
+
         // --- FUNCIONES DE EXPORTACIÓN ---
 
         // Función de formato de números a moneda (COP)
@@ -446,56 +295,57 @@
             XLSX.writeFile(wb, "Tabla_Amortizacion_INFIHUILA.xlsx");
         }
 
-        // Función para exportar a PDF (CORREGIDA: ELIMINACIÓN DE PIE DE PÁGINA CENTRAL)
+        // Función para exportar a PDF (ACTUALIZADA con formato A4, márgenes, paginación y pie de página)
         function exportToPDF() {
             if (lastAmortizationTableData.length === 0) {
-                console.error("No hay datos de amortización para exportar a PDF.");
+                console.error("No hay datos de amortización para exportar.");
                 return;
             }
-
+            
             const { jsPDF } = window.jspdf;
             
-            // Usar formato A4 vertical
-            const doc = new jsPDF('p', 'pt', 'a4'); 
+            // Configuración A4: 595.28 x 841.89 pt (Vertical)
+            // Usamos 'mm' para un control más fácil de los márgenes
+            const doc = new jsPDF('p', 'mm', 'a4'); 
             
-            // Configuración de márgenes (valores en puntos pt: 1 pulgada = 72 pt)
-            const margin = 40; // Margen uniforme
+            const MARGIN_LEFT = 15; // 15 mm de margen izquierdo
+            const MARGIN_TOP = 20;  // 20 mm de margen superior
+            const MARGIN_RIGHT = 15; // 15 mm de margen derecho
+            const MARGIN_BOTTOM = 15; // 15 mm de margen inferior
             
-            // Obtener la fecha y hora actual en formato local
-            const now = new Date();
-            const fechaHoraGeneracion = now.toLocaleString('es-CO', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false // Formato 24h
+            const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+            const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
+            
+            const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+            const CONTENT_HEIGHT = PAGE_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM - 10; // 10mm para el pie de página
+            
+            const today = new Date();
+            const dateTime = today.toLocaleString('es-CO', { 
+                year: 'numeric', month: 'numeric', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                hour12: false
             });
-            const infoGeneracion = `Generado el: ${fechaHoraGeneracion}`;
 
-            // 1. Título y Encabezado
-            doc.setFontSize(18);
-            doc.setTextColor(0, 108, 114); // infihuila-blue: 006C72
-            doc.text("SIMULADOR DE CRÉDITOS - INFIHUILA", margin, margin);
-            
-            doc.setFontSize(14);
-            doc.setTextColor(51, 51, 51);
-            doc.text("VI. Tabla de Amortización Completa", margin, margin + 25);
+            // Función para añadir el pie de página
+            const addFooter = (doc, pageNumber, totalPages) => {
+                doc.setFontSize(8);
+                
+                // Pie de página izquierdo: Fecha y hora de simulación
+                doc.text(`Fecha y Hora de Simulación: ${dateTime}`, MARGIN_LEFT, PAGE_HEIGHT - 10);
+                
+                // Pie de página derecho: Número de página
+                const pageText = `Página ${pageNumber} de ${totalPages}`;
+                const textWidth = doc.getStringUnitWidth(pageText) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+                doc.text(pageText, PAGE_WIDTH - MARGIN_RIGHT - textWidth, PAGE_HEIGHT - 10);
+            };
 
-            // 2. Preparar Datos y Columnas para AutoTable
+            // 1. Crear el objeto de tabla con el formato de autoTable (Header y Body)
             const headers = [
-                'N.º Cuota', 
-                'Fecha (Est.)', 
-                'Cuota Total', 
-                'Interés', 
-                'Capital', 
-                'Saldo Final'
+                ['N.º Cuota', 'Fecha (Est.)', 'Cuota Total', 'Interés', 'Capital', 'Saldo Final']
             ];
             
-            // Mapear los datos de la tabla (solo los valores formateados)
-            const bodyData = lastAmortizationTableData.map(item => [
-                item.nCuota,
+            const body = lastAmortizationTableData.map(item => [
+                item.nCuota.toString(),
                 item.fecha,
                 formatCurrency(item.cuota),
                 formatCurrency(item.interes),
@@ -503,51 +353,55 @@
                 formatCurrency(item.saldoFinal)
             ]);
 
-            // 3. Generar la Tabla con AutoTable
+            // Cargar la librería autoTable de jsPDF (debe estar disponible globalmente)
+            if (typeof doc.autoTable !== 'function') {
+                console.error("jsPDF-autoTable no está disponible. Verifique la carga de la librería.");
+                return;
+            }
+
+            // 2. Generar la tabla con autoTable y paginación
             doc.autoTable({
-                startY: margin + 40, // Inicia la tabla debajo del encabezado
-                head: [headers],
-                body: bodyData,
-                theme: 'striped', // Estilo de tabla
-                margin: { top: margin, bottom: margin, left: margin, right: margin },
-                styles: { 
-                    font: 'helvetica', 
-                    fontSize: 8, 
-                    cellPadding: 3,
-                    textColor: [31, 41, 55] // infihuila-text
-                },
+                head: headers,
+                body: body,
+                startY: MARGIN_TOP,
+                margin: { top: MARGIN_TOP, left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: MARGIN_BOTTOM },
+                theme: 'striped',
                 headStyles: { 
                     fillColor: [0, 108, 114], // infihuila-blue
                     textColor: 255, 
-                    fontSize: 9,
-                    halign: 'center'
+                    fontSize: 8, 
+                    fontStyle: 'bold' 
+                },
+                styles: { 
+                    fontSize: 7, 
+                    cellPadding: 1,
                 },
                 columnStyles: {
-                    // Alineación a la derecha para columnas de dinero
-                    2: { halign: 'right' },
-                    3: { halign: 'right' },
-                    4: { halign: 'right' },
-                    5: { halign: 'right' }
+                    // Ajustar alineación a la derecha para columnas numéricas
+                    2: { halign: 'right' }, // Cuota Total
+                    3: { halign: 'right' }, // Interés
+                    4: { halign: 'right' }, // Capital
+                    5: { halign: 'right' }  // Saldo Final
                 },
-                // Hook para añadir pie de página o texto adicional al finalizar
-                didDrawPage: function (data) {
-                    const pageHeight = doc.internal.pageSize.getHeight();
-                    const pageWidth = doc.internal.pageSize.getWidth();
-                    const footerY = pageHeight - 20;
-
-                    doc.setFontSize(8);
-                    doc.setTextColor(150);
+                didDrawPage: (data) => {
+                    // Título en cada página
+                    doc.setFontSize(10);
+                    doc.setTextColor(31, 41, 55); // Color de texto oscuro
+                    doc.text("VI. Tabla de Amortización Completa", MARGIN_LEFT, MARGIN_TOP - 5);
                     
-                    // --- PIE DE PÁGINA IZQUIERDO (Fecha y Hora de Generación) ---
-                    doc.text(infoGeneracion, data.settings.margin.left, footerY);
-
-                    // --- PIE DE PÁGINA DERECHO (Número de página) ---
-                    doc.text('Página ' + doc.internal.getNumberOfPages(), pageWidth - data.settings.margin.right, footerY, { align: 'right' });
-
-                    // NOTA: Se ha eliminado el texto central "© 2025 INFIHUILA - Documento controlado..." 
-                    // para evitar la superposición de texto en el PDF.
+                    // Pie de página
+                    addFooter(doc, data.pageNumber, doc.internal.pages.length - 1); 
                 }
             });
+
+            // El total de páginas se calcula después de que autoTable termina
+            const totalPages = doc.internal.pages.length - 1; // El primer elemento es dummy
+
+            // Volver a dibujar los pies de página para corregir el total de páginas
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                addFooter(doc, i, totalPages);
+            }
 
             doc.save('Tabla_Amortizacion_INFIHUILA.pdf');
         }
@@ -555,7 +409,7 @@
         // --- FIN FUNCIONES DE EXPORTACIÓN ---
 
 
-        // Función para simular el crédito (AMORTIZACIÓN DE CAPITAL CONSTANTE)
+        // Función para simular el crédito
         async function simularCredito() {
             const button = document.querySelector('button[onclick="simularCredito()"]');
             const spinner = document.getElementById('loading-spinner');
@@ -568,68 +422,86 @@
             pdfBtn.disabled = true;
             document.getElementById('tabla-seccion').classList.add('hidden'); // Ocultar tabla al inicio
 
+            // 1. Obtención y validación de Inputs
             const monto = parseFloat(document.getElementById('monto').value);
             const plazo = parseInt(document.getElementById('plazo').value);
             const periodoGracia = parseInt(document.getElementById('periodo-gracia').value);
             const spread = parseFloat(document.getElementById('spread').value) / 100;
             const tasaBaseInput = parseFloat(document.getElementById('tasa-base-input').value);
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
+            const tipoAmortizacion = document.getElementById('tipo-amortizacion').value; // String, no necesita isNaN
 
-            // --- VALIDACIÓN DE INPUTS ---
-            if (isNaN(monto) || monto <= 0 || isNaN(plazo) || plazo <= 0 || isNaN(spread) || spread < 0 || isNaN(tasaBaseInput) || tasaBaseInput < 0 || isNaN(periodoGracia) || periodoGracia < 0 || periodoGracia > plazo) {
-                if (periodoGracia > plazo) {
-                    console.warn('Advertencia: El Periodo de Gracia no puede ser mayor al Plazo Total. Se ejecutará el cálculo estándar (sin periodo de gracia).');
-                    document.getElementById('periodo-gracia').value = 0;
-                } else {
-                    console.error('Error de validación: Por favor, ingrese valores válidos.');
-                    spinner.classList.add('hidden');
-                    button.disabled = false;
-                    return;
-                }
+            // CORRECCIÓN: Se elimina el chequeo isNaN(tipoAmortizacion) ya que es un string y siempre falla la validación
+            if (isNaN(monto) || monto <= 0 || isNaN(plazo) || plazo <= 0 || isNaN(spread) || spread < 0 || isNaN(tasaBaseInput) || tasaBaseInput < 0 || isNaN(periodoGracia) || periodoGracia < 0) {
+                console.error('Error de validación: Por favor, ingrese valores válidos.');
+                spinner.classList.add('hidden');
+                button.disabled = false;
+                return;
             }
-            // --- FIN VALIDACIÓN ---
+            
+            // Validación de Gracia vs Plazo
+            const finalPlazo = plazo;
+            let finalPeriodoGracia = periodoGracia;
+            if (finalPeriodoGracia >= finalPlazo) {
+                console.warn('Advertencia: El Periodo de Gracia no puede ser mayor o igual al Plazo Total. Se ejecutará el cálculo estándar (sin periodo de gracia).');
+                finalPeriodoGracia = 0;
+                document.getElementById('periodo-gracia').value = 0;
+            }
 
+
+            // 2. Cálculo de Tasas
             const tasaBase = tasaBaseInput / 100;
             const tasaAnualTotal = tasaBase + spread;
             let tasaMensual = 0;
-            let tasaEtiqueta = '5. Total Tasa Anual:';
+            let tasaEfectivaAnual = 0; // Tasa Efectiva Anual Calculada
+            let tasaNominalAnual = 0; // Tasa Nominal Anual Calculada
 
-            // Cálculo de Tasa Mensual
-            if (tasaReferenciaKey === 'TNA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
-                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR;
-                document.getElementById('tasa-explicacion').textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
-            } else if (tasaReferenciaKey === 'EA') {
+            if (tasaReferenciaKey === 'EA') {
+                // Si la tasa ingresada es E.A.
+                tasaEfectivaAnual = tasaAnualTotal;
                 tasaMensual = Math.pow(1 + tasaAnualTotal, 1 / MONTHS_IN_YEAR) - 1;
-                document.getElementById('tasa-explicacion').textContent = 'TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).';
+                tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
+            } else {
+                // Si la tasa ingresada es TNA, DTF o IBR (tratadas como TNA)
+                tasaNominalAnual = tasaAnualTotal;
+                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR;
+                tasaEfectivaAnual = Math.pow(1 + tasaMensual, MONTHS_IN_YEAR) - 1;
             }
             
-            document.getElementById('detalle-tasa-label').textContent = tasaEtiqueta;
-
+            // 3. Preparación de Variables de Amortización
+            const plazoAmortizacion = finalPlazo - finalPeriodoGracia;
             let capitalFijoAmortizacion = 0;
+            let cuotaFijaConstante = 0;
             let interesPrimeraAmortizacion = 0;
-            let cuotaFijaDisplay = 0;
-
-            const plazoAmortizacion = plazo - periodoGracia;
             
+            // Lógica basada en el tipo de amortización
             if (plazoAmortizacion > 0) {
-                capitalFijoAmortizacion = monto / plazoAmortizacion;
                 interesPrimeraAmortizacion = monto * tasaMensual;
-                cuotaFijaDisplay = capitalFijoAmortizacion + interesPrimeraAmortizacion;
+                
+                if (tipoAmortizacion === 'Constante') { // Capital Constante (Alemán)
+                    capitalFijoAmortizacion = monto / plazoAmortizacion;
+                    cuotaFijaConstante = capitalFijoAmortizacion + interesPrimeraAmortizacion; // Cuota Inicial
+                } else if (tipoAmortizacion === 'Fija') { // Cuota Fija (Francés)
+                    capitalFijoAmortizacion = 0; // Se calcula en el loop
+                    cuotaFijaConstante = calcularCuotaFija(monto, tasaMensual, plazoAmortizacion);
+                }
             } else {
-                cuotaFijaDisplay = monto;
+                // Solo intereses durante todo el plazo (escenario de gracia total o plazo muy corto)
+                cuotaFijaConstante = monto * tasaMensual;
                 capitalFijoAmortizacion = 0;
-                interesPrimeraAmortizacion = 0;
+                interesPrimeraAmortizacion = monto * tasaMensual;
             }
 
             let saldoPendiente = monto;
             let totalInteres = 0;
             let totalCapital = 0;
+            let totalPagado = 0;
             const tablaAmortizacion = [];
             const amortizacionAnual = {};
             const fechaInicio = new Date();
 
-            // --- BUCLE DE AMORTIZACIÓN ---
-            for (let i = 1; i <= plazo; i++) {
+            // 4. Bucle de Amortización
+            for (let i = 1; i <= finalPlazo; i++) {
                 // Pequeño retraso para simular carga
                 await new Promise(r => setTimeout(r, 0)); 
 
@@ -640,27 +512,43 @@
                 let cuotaActual = 0;
                 let capital = 0;
 
-                if (i <= periodoGracia) {
+                const esPeriodoGracia = i <= finalPeriodoGracia;
+                const esPeriodoAmortizacion = i > finalPeriodoGracia;
+
+                if (esPeriodoGracia) {
+                    // Periodo de Gracia: Solo se pagan intereses
                     cuotaActual = interes;
                     capital = 0;
-                } else {
-                    capital = capitalFijoAmortizacion;
-                    cuotaActual = capital + interes;
+                } else if (esPeriodoAmortizacion) {
+                    // Periodo de Amortización
+                    if (tipoAmortizacion === 'Constante') {
+                        // Capital Constante (Alemán)
+                        capital = capitalFijoAmortizacion;
+                        cuotaActual = capital + interes;
+                    } else if (tipoAmortizacion === 'Fija') {
+                        // Cuota Fija (Francés)
+                        cuotaActual = cuotaFijaConstante;
+                        capital = cuotaActual - interes;
+                        if (capital < 0) capital = 0; // Por si hay errores de redondeo o tasa alta
+                    }
                 }
 
                 let saldoFinal = saldoPendiente - capital;
 
-                // Ajuste para la última cuota (cierre de saldos)
-                if (i === plazo || saldoFinal < 1) { // Pequeño margen de error
-                    capital = saldoPendiente;
-                    cuotaActual = capital + interes;
+                // Ajuste para la última cuota para cuadrar el saldo
+                if (i === finalPlazo || saldoFinal < 1) { // Pequeño margen de error
+                    capital += saldoPendiente;
                     saldoFinal = 0;
+                    cuotaActual = capital + interes; // Recalcular cuota
                 }
 
+                // Acumuladores
                 totalInteres += interes;
                 totalCapital += capital;
+                totalPagado += cuotaActual;
                 saldoPendiente = saldoFinal;
 
+                // Redondeo para mostrar y almacenar
                 const cuotaRounded = Math.round(cuotaActual);
                 const interesRounded = Math.round(interes);
                 const capitalRounded = Math.round(capital);
@@ -675,6 +563,7 @@
                     saldoFinal: saldoFinalRounded
                 });
 
+                // Datos para Gráfico de Barras Anual
                 const year = fechaCuota.getFullYear();
                 if (!amortizacionAnual[year]) {
                     amortizacionAnual[year] = { capital: 0, interes: 0 };
@@ -682,45 +571,48 @@
                 amortizacionAnual[year].capital += capitalRounded;
                 amortizacionAnual[year].interes += interesRounded;
             }
-            // --- FIN BUCLE DE AMORTIZACIÓN ---
             
-            // Guardar datos para exportación y guardado en Firestore
+            // 5. Actualización de la Interfaz
             lastAmortizationTableData = tablaAmortizacion;
-            window.lastSimulationData = {
-                inputs: {
-                    monto: monto,
-                    plazo: plazo,
-                    periodoGracia: periodoGracia,
-                    spread: spread * 100, // Guardar en %
-                    tasaBase: tasaBaseInput,
-                    tasaReferencia: tasaReferenciaKey,
-                },
-                results: {
-                    cuotaInicial: cuotaFijaDisplay,
-                    capitalFijo: capitalFijoAmortizacion,
-                    interesInicial: interesPrimeraAmortizacion,
-                    tasaMensual: tasaMensual * 100, // Guardar en %
-                    tasaAnualTotal: tasaAnualTotal * 100, // Guardar en %
-                    capitalTotalAmortizado: totalCapital,
-                    interesesTotalesPagados: totalInteres
-                },
-                amortizationTable: tablaAmortizacion // Tabla completa (para serializar en Firestore)
-            };
 
             renderPieChart(totalCapital, totalInteres);
             renderBarChart(amortizacionAnual);
             
-            // Actualización de la sección II. Detalles del crédito
-            document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaFijaDisplay));
-            document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijoAmortizacion));
+            // A. Detalles del Crédito
+            // Si es Cuota Fija, usamos cuotaFijaConstante. Si es Capital Constante, usamos la Cuota Inicial (Capital fijo + Interés inicial)
+            const cuotaMostrar = tipoAmortizacion === 'Fija' ? cuotaFijaConstante : capitalFijoAmortizacion + interesPrimeraAmortizacion;
+            document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaMostrar));
             document.getElementById('detalle-interes-inicial').textContent = formatCurrency(Math.round(interesPrimeraAmortizacion));
-            document.getElementById('detalle-tasa-mensual').textContent = (tasaMensual * 100).toFixed(4) + '%';
-            document.getElementById('detalle-tasa-final').textContent = (tasaAnualTotal * 100).toFixed(4) + '%';
             
-            // Actualización de la sección III. Totales del Crédito
+            // Actualizar etiquetas y visibilidad según tipo de amortización
+            if (tipoAmortizacion === 'Constante') {
+                document.getElementById('label-cuota-fija').textContent = '1. Cuota Mensual Inicial:';
+                document.getElementById('row-capital-fijo').classList.remove('hidden');
+                document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijoAmortizacion));
+            } else {
+                document.getElementById('label-cuota-fija').textContent = '1. Cuota Mensual Fija:';
+                document.getElementById('row-capital-fijo').classList.add('hidden');
+            }
+
+            // B. Detalles de Tasa
+            document.getElementById('detalle-tasa-mensual').textContent = (tasaMensual * 100).toFixed(4) + '%';
+            document.getElementById('detalle-tasa-efectiva').textContent = (tasaEfectivaAnual * 100).toFixed(4) + '%';
+            
+            if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'TNA') {
+                 document.getElementById('row-tasa-nominal').classList.remove('hidden');
+                 document.getElementById('detalle-tasa-nominal').textContent = (tasaNominalAnual * 100).toFixed(4) + '%';
+            } else {
+                 // Ocultar TNA si se usa DTF/IBR (a menos que se quiera mostrar TNA calculada)
+                 document.getElementById('row-tasa-nominal').classList.add('hidden');
+            }
+
+
+            // C. Totales
             document.getElementById('detalle-capital-total').textContent = formatCurrency(Math.round(totalCapital));
             document.getElementById('detalle-interes-total').textContent = formatCurrency(Math.round(totalInteres));
-            
+            document.getElementById('detalle-total-pagado').textContent = formatCurrency(Math.round(totalPagado));
+
+            // D. Tabla y Botones
             renderAmortizationTable(tablaAmortizacion);
             document.getElementById('tabla-seccion').classList.remove('hidden');
 
@@ -728,10 +620,8 @@
             button.disabled = false;
             excelBtn.disabled = false; // Habilitar botones de descarga
             pdfBtn.disabled = false;
-            
         }
 
-        // --- FUNCIONES DE GRÁFICOS (Sin cambios) ---
         function renderPieChart(capital, interes) {
             const ctx = document.getElementById('pieChart').getContext('2d');
 
@@ -896,47 +786,39 @@
         function updateTasaLabels() {
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
             const tasaExplicacion = document.getElementById('tasa-explicacion');
-            const tasaLabel = document.getElementById('detalle-tasa-label');
-
-            tasaLabel.textContent = '5. Total Tasa Anual:'; 
 
             if (tasaReferenciaKey === 'EA') {
                 tasaExplicacion.textContent = 'TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).';
-            } else if (tasaReferenciaKey === 'TNA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
+            } else {
                 tasaExplicacion.textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
             }
             
             // Ejecutar simulación con los nuevos parámetros
+            // Esta llamada solo ocurre cuando el usuario cambia la tasa de referencia
             simularCredito();
         }
 
-        // --- INICIALIZACIÓN Y EVENTOS ---
         window.onload = function() {
-            // Rellenar opciones de periodo de gracia
-            const initialSelect = document.getElementById('periodo-gracia');
-            if (initialSelect.options.length === 1) {
-                initialSelect.innerHTML = '';
-                for (let i = 0; i <= 24; i++) {
-                    const option = document.createElement('option');
-                    option.value = i;
-                    option.textContent = i + ' Meses';
-                    if (i === 12) {
-                        option.selected = true;
-                    }
-                    initialSelect.appendChild(option);
-                }
-            }
+            // Cargar jsPDF-autoTable (librería necesaria para la paginación de la tabla)
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js';
+            document.head.appendChild(script);
             
-            // Inicializar Firebase (si está disponible en el entorno)
-            if (typeof window.initFirebase === 'function') {
-                window.initFirebase();
+            // Rellenar opciones de periodo de gracia (máximo 24 meses)
+            const initialSelect = document.getElementById('periodo-gracia');
+            initialSelect.innerHTML = '';
+            for (let i = 0; i <= 24; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i + ' Meses';
+                if (i === 12) {
+                    option.selected = true;
+                }
+                initialSelect.appendChild(option);
             }
 
-            // Inicializar consecutivo local (funciona siempre en GitHub Pages)
-            initConsecutivoLocal();
-            
-            // Event listeners para re-simular al cambiar inputs
-            document.querySelectorAll('#monto, #plazo, #spread, #tasa-base-input, #periodo-gracia').forEach(input => {
+            // Configurar listeners
+            document.querySelectorAll('#monto, #plazo, #spread, #tasa-base-input, #periodo-gracia, #tipo-amortizacion').forEach(input => {
                 input.addEventListener('change', simularCredito);
                 input.addEventListener('keyup', (e) => {
                     if (e.key === 'Enter') simularCredito();
@@ -944,7 +826,13 @@
             });
 
             document.getElementById('tasa-referencia').addEventListener('change', updateTasaLabels);
-            updateTasaLabels();
+            document.getElementById('tipo-amortizacion').addEventListener('change', simularCredito);
+
+            // Inicializar simulación DESPUÉS de cargar autoTable
+            // Esto asegura que la simulación se ejecute solo una vez al inicio y solo después de que la librería externa esté lista.
+            script.onload = () => {
+                 updateTasaLabels(); // Esta función llama a simularCredito()
+            };
         };
     </script>
 </body>
