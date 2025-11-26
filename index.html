@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport configurado para auto-escala y prevención de zoom no deseado en inputs -->
+    <!-- Viewport configurado para auto-escala -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador de Créditos - Infihuila</title>
     <!-- Carga de Tailwind CSS -->
@@ -41,7 +41,7 @@
     <style>
         body {
             font-family: "Tw Cen MT", sans-serif;
-            -webkit-font-smoothing: antialiased; /* Suavizado de fuentes */
+            -webkit-font-smoothing: antialiased;
         }
         .card {
             border-radius: 0.75rem; 
@@ -49,15 +49,13 @@
             background-color: white;
             transition: transform 0.2s ease-in-out;
         }
-        #tabla-seccion, #trend-section {
+        #tabla-seccion, #trend-section-container {
             transition: all 0.3s ease-in-out;
         }
-        /* Clase para inputs inválidos */
         .input-error {
-            border-color: #ef4444 !important; /* red-500 */
-            background-color: #fef2f2; /* red-50 */
+            border-color: #ef4444 !important;
+            background-color: #fef2f2;
         }
-        /* Animación para el botón flotante */
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-5px); }
@@ -66,9 +64,12 @@
         .floating-btn-anim {
             animation: float 3s ease-in-out infinite;
         }
-        /* Asegurar que los inputs no hagan zoom en iOS al enfocarse */
         input, select, textarea {
             font-size: 16px; 
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
         }
     </style>
 </head>
@@ -76,18 +77,14 @@
 
     <div class="max-w-7xl mx-auto w-full">
         <!-- ENCABEZADO PRINCIPAL -->
-        <!-- Flex-col en móvil, Flex-row en tablet/desktop -->
         <header class="w-full mb-4 sm:mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border-t-4 border-infihuila-green">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
-                <!-- Logo: Tamaño ajustable -->
                 <div class="w-full md:w-auto flex justify-center md:justify-start">
                     <img src="Logo_Infi.png" 
                          alt="Logo INFIHUILA" 
                          class="h-12 xs:h-14 sm:h-16 w-auto object-contain transition-all duration-300"
                          onerror="this.onerror=null;this.src='https://placehold.co/140x64/006C72/FFFFFF?text=Logo+INFIHUILA';">
                 </div>
-
-                <!-- Títulos: Texto escalable -->
                 <div class="flex-1 text-center w-full">
                     <h1 class="text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-extrabold text-infihuila-green leading-tight break-words">
                         SIMULADOR DE CRÉDITOS
@@ -96,8 +93,6 @@
                         Gestión Comercial - INFIHUILA
                     </h2>
                 </div>
-
-                <!-- Botones: Full width en móvil, auto en desktop -->
                 <div class="w-full md:w-auto flex flex-col xs:flex-row gap-2 justify-center md:justify-end">
                     <button id="download-excel-btn" onclick="exportToExcel()" class="flex-1 md:flex-none justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue hover:shadow-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
                         Descargar Excel
@@ -109,17 +104,17 @@
             </div>
         </header>
 
-        <!-- GRID PRINCIPAL: 1 Columna en móvil, 3 en Desktop grande -->
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-max w-full">
+        <!-- GRID PRINCIPAL: 2 COLUMNAS VISUALES (Inputs vs Gráficos) -->
+        <!-- En pantallas grandes, Inputs 1/3 del ancho, Gráficos 2/3 del ancho -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full items-start">
             
-            <!-- COLUMNA IZQUIERDA: DATOS Y CONFIGURACIÓN -->
+            <!-- COLUMNA IZQUIERDA (Span 1): DATOS Y CONFIGURACIÓN -->
             <div class="lg:col-span-1 space-y-4 sm:space-y-6 w-full">
                 
-                <!-- SECCIÓN: I. DATOS DEL CLIENTE -->
+                <!-- I. DATOS DEL CLIENTE -->
                 <div class="card p-4 sm:p-6 w-full">
                     <div class="flex flex-wrap justify-between items-start mb-4 gap-2">
                         <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue">I. Datos del Cliente</h3>
-                        <!-- Botones pequeños utilitarios -->
                         <div class="flex flex-col gap-2 items-end w-full sm:w-auto">
                             <span id="btn-consecutivo" class="px-2 py-1 text-[10px] sm:text-xs font-semibold border border-infihuila-blue text-infihuila-blue rounded-md bg-white select-none">
                                 N.º 001-2025
@@ -151,28 +146,24 @@
                     <p id="error-cliente" class="text-red-500 text-xs hidden font-bold mt-2 bg-red-50 p-2 rounded">⚠️ Datos incompletos.</p>
                 </div>
 
-                <!-- SECCIÓN II: INFORMACIÓN DEL CRÉDITO -->
+                <!-- II. INFORMACIÓN DEL CRÉDITO -->
                 <div class="card p-4 sm:p-6 h-fit w-full">
                     <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue mb-4">II. Información del crédito</h3>
 
                     <div class="space-y-3 sm:space-y-4">
-                        <!-- Monto -->
                         <div>
                             <label for="monto" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Monto del Crédito ($)</label>
                             <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
                         </div>
 
-                        <!-- Plazo -->
                         <div>
                             <label for="plazo" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Plazo (Meses)</label>
                             <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
-                            <!-- Mensaje Advertencia -->
                             <p id="plazo-warning" class="hidden text-[10px] sm:text-xs text-infihuila-blue font-bold mt-2 bg-teal-50 p-2 rounded border border-infihuila-blue animate-pulse">
                                 ⚠️ Plazo > 96 meses: Requiere aprobación del consejo directivo.
                             </p>
                         </div>
 
-                        <!-- Tipo Amortización -->
                         <div>
                             <label for="tipo-amortizacion" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tipo de Amortización</label>
                             <select id="tipo-amortizacion" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
@@ -181,7 +172,6 @@
                             </select>
                         </div>
                         
-                        <!-- Periodo Gracia -->
                         <div>
                             <label for="periodo-gracia" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Periodo de Gracia</label>
                             <select id="periodo-gracia" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
@@ -189,7 +179,6 @@
                             </select>
                         </div>
 
-                        <!-- Tasa Referencia -->
                         <div>
                             <label for="tasa-referencia" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tipo de Tasa Base</label>
                             <select id="tasa-referencia" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
@@ -201,7 +190,6 @@
                             <p id="tasa-explicacion" class="text-[10px] sm:text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
                         </div>
                         
-                        <!-- Tasa Base y Spread (Grid interno) -->
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label for="tasa-base-input" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tasa Base (%)</label> 
@@ -213,7 +201,6 @@
                             </div>
                         </div>
 
-                        <!-- Frecuencia -->
                         <div>
                             <label for="frecuencia-amortizacion" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Forma de amortización</label>
                             <select id="frecuencia-amortizacion" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
@@ -224,14 +211,13 @@
                             </select>
                         </div>
 
-                        <!-- Botón Simular -->
                         <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-bold py-3.5 rounded-xl text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transform active:scale-95 mt-4">
                             <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
                             Simular Crédito
                         </button>
                     </div>
 
-                    <!-- III. DETALLES DEL CRÉDITO -->
+                    <!-- III. DETALLES -->
                     <div id="detalles-credito" class="mt-6 border-t border-gray-200 pt-4">
                         <h4 class="text-sm sm:text-lg font-bold mb-3 text-infihuila-blue">III. Detalles (Valores Iniciales)</h4>
                         <div class="space-y-2 text-xs sm:text-sm">
@@ -254,52 +240,52 @@
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: GRÁFICOS -->
-            <div class="lg:col-span-2 space-y-4 sm:space-y-6 flex flex-col w-full h-full">
+            <!-- COLUMNA DERECHA (Span 2): TODOS LOS GRÁFICOS APILADOS CON ALTURA AJUSTADA -->
+            <div class="lg:col-span-2 w-full flex flex-col space-y-4 sm:space-y-6">
+                
                 <!-- V. Gráfico de Torta -->
                 <div class="card p-4 sm:p-6 w-full flex flex-col">
-                    <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">V. Distribución del Crédito</h3>
-                    <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-[400px]">
+                    <h3 class="text-lg sm:text-xl font-bold mb-3 text-infihuila-blue">V. Distribución del Crédito</h3>
+                    <!-- Altura normal (aprox 290px) -->
+                    <div class="relative w-full h-64 sm:h-72 chart-container">
                         <canvas id="pieChart"></canvas>
                     </div>
                 </div>
 
                 <!-- VI. Gráfico de Barras -->
-                <div class="card p-4 sm:p-6 w-full flex flex-col flex-grow">
-                    <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VI. Comportamiento por Vigencia</h3>
-                    <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-full min-h-[300px]">
+                <div class="card p-4 sm:p-6 w-full flex flex-col">
+                    <h3 class="text-lg sm:text-xl font-bold mb-3 text-infihuila-blue">VI. Comportamiento por Vigencia</h3>
+                    <!-- Altura normal (aprox 290px) -->
+                    <div class="relative w-full h-64 sm:h-72 chart-container">
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
+
+                <!-- VII. Gráfico de Tendencia -->
+                <div id="trend-section-container" class="card p-4 sm:p-6 w-full flex flex-col hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <h3 class="text-lg sm:text-xl font-bold text-infihuila-blue">VII. Tendencia de Distribución Mensual</h3>
+                        <div class="flex items-center gap-2">
+                            <label for="trend-year-filter" class="text-xs sm:text-sm font-semibold text-gray-600">Filtrar por Año:</label>
+                            <select id="trend-year-filter" onchange="filterTrendChart()" class="p-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white shadow-sm cursor-pointer outline-none">
+                                <option value="all">Todos los años</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Altura ajustada para alineación perfecta (aprox 760px en desktop) -->
+                    <div class="relative w-full h-80 sm:h-96 lg:h-[760px] chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <p class="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">Gráfico: Porcentaje de la cuota mensual destinado a capital vs. intereses.</p>
+                </div>
+
             </div>
         </main>
-        
-        <!-- VII. GRÁFICO DE TENDENCIA (NUEVA SECCIÓN) -->
-        <section id="trend-section" class="mt-6 sm:mt-8 w-full max-w-7xl mx-auto hidden">
-            <div class="card p-4 sm:p-6 w-full flex flex-col">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                    <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue">VII. Tendencia de Distribución Mensual</h3>
-                    <!-- Control de Fechas Desplegable -->
-                    <div class="flex items-center gap-2">
-                        <label for="trend-year-filter" class="text-xs sm:text-sm font-semibold text-gray-600">Filtrar por Año:</label>
-                        <select id="trend-year-filter" onchange="filterTrendChart()" class="p-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white shadow-sm cursor-pointer outline-none">
-                            <option value="all">Todos los años</option>
-                            <!-- Opciones dinámicas -->
-                        </select>
-                    </div>
-                </div>
-                <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-[400px]">
-                    <canvas id="trendChart"></canvas>
-                </div>
-                <p class="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">Gráfico: Porcentaje de la cuota mensual destinado a capital vs. intereses.</p>
-            </div>
-        </section>
 
-        <!-- VIII. Tabla de Amortización (RENUMERADA) -->
+        <!-- VIII. Tabla de Amortización -->
         <section id="tabla-seccion" class="mt-6 sm:mt-8 hidden w-full">
             <div class="card p-4 sm:p-6 w-full overflow-hidden">
                 <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VIII. Tabla de Amortización</h3>
-                <!-- Contenedor scrollable para tablas responsive -->
                 <div class="w-full overflow-x-auto border rounded-lg scrollbar-thin scrollbar-thumb-infihuila-blue scrollbar-track-gray-100">
                     <table id="tabla-a-exportar" class="min-w-full text-[10px] xs:text-xs sm:text-sm divide-y divide-gray-200 whitespace-nowrap">
                         <thead class="sticky top-0 bg-infihuila-blue text-white z-10">
@@ -320,7 +306,7 @@
             </div>
         </section>
 
-        <!-- BOTÓN FLOTANTE: Posicionado con margen seguro -->
+        <!-- BOTÓN FLOTANTE -->
         <div class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
             <button onclick="toggleHelpModal()" class="bg-infihuila-green text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 floating-btn-anim flex items-center justify-center group focus:outline-none focus:ring-4 focus:ring-yellow-200" title="Ayuda y Sugerencias">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -329,39 +315,22 @@
             </button>
         </div>
 
-        <!-- MODAL DE AYUDA Y SUGERENCIAS -->
-        <!-- Fondo oscurecido con backdrop-filter -->
+        <!-- MODAL -->
         <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
-            <!-- Contenedor del modal: Ancho responsivo -->
             <div class="bg-white rounded-xl shadow-2xl w-[95%] sm:w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0 max-h-[90vh] flex flex-col" id="help-modal-content">
-                <!-- Header Modal -->
                 <div class="bg-infihuila-blue p-4 flex justify-between items-center shrink-0">
-                    <h3 class="text-white font-bold text-base sm:text-lg flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        Centro de Ayuda
-                    </h3>
+                    <h3 class="text-white font-bold text-base sm:text-lg flex items-center gap-2">Centro de Ayuda</h3>
                     <button onclick="toggleHelpModal()" class="text-white hover:bg-white hover:text-infihuila-blue rounded-full p-1 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-
-                <!-- Tabs -->
                 <div class="flex border-b border-gray-200 shrink-0">
-                    <button onclick="switchTab('tutorial')" id="tab-tutorial" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm bg-gray-50 text-infihuila-blue border-b-2 border-infihuila-blue transition-colors hover:bg-gray-100">
-                        📖 Tutorial
-                    </button>
-                    <button onclick="switchTab('suggestions')" id="tab-suggestions" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm text-gray-500 hover:text-infihuila-blue transition-colors hover:bg-gray-100">
-                        💡 Sugerencias
-                    </button>
+                    <button onclick="switchTab('tutorial')" id="tab-tutorial" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm bg-gray-50 text-infihuila-blue border-b-2 border-infihuila-blue transition-colors hover:bg-gray-100">📖 Tutorial</button>
+                    <button onclick="switchTab('suggestions')" id="tab-suggestions" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm text-gray-500 hover:text-infihuila-blue transition-colors hover:bg-gray-100">💡 Sugerencias</button>
                 </div>
-
-                <!-- Content: Scrollable -->
                 <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
-                    <!-- Tutorial Content -->
                     <div id="content-tutorial" class="space-y-4">
                         <h4 class="font-bold text-infihuila-blue text-base sm:text-lg">¿Cómo usar el simulador?</h4>
                         <ol class="list-decimal list-inside space-y-3 text-xs sm:text-sm text-gray-700">
@@ -372,12 +341,9 @@
                             <li class="pl-2"><span class="font-semibold text-infihuila-green">Exportar:</span> Use los botones superiores para Excel o PDF.</li>
                         </ol>
                     </div>
-
-                    <!-- Suggestions Content -->
                     <div id="content-suggestions" class="hidden space-y-4">
                         <h4 class="font-bold text-infihuila-blue text-base sm:text-lg">Su opinión importa</h4>
                         <p class="text-xs sm:text-sm text-gray-600">Envíenos dudas o reportes de errores.</p>
-                        
                         <form id="suggestion-form" onsubmit="handleSuggestion(event)" class="space-y-3">
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Tipo</label>
@@ -391,9 +357,7 @@
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Comentario</label>
                                 <textarea required class="w-full p-2 text-sm border border-gray-300 rounded h-24 focus:ring-infihuila-green focus:border-infihuila-green" placeholder="Escriba aquí..."></textarea>
                             </div>
-                            <button type="submit" class="w-full bg-infihuila-green text-white font-bold py-2.5 rounded hover:bg-yellow-500 transition-colors shadow text-sm sm:text-base">
-                                Enviar
-                            </button>
+                            <button type="submit" class="w-full bg-infihuila-green text-white font-bold py-2.5 rounded hover:bg-yellow-500 transition-colors shadow text-sm sm:text-base">Enviar</button>
                         </form>
                     </div>
                 </div>
@@ -411,21 +375,19 @@
         // Inicialización de variables
         let pieChartInstance = null;
         let barChartInstance = null;
-        let trendChartInstance = null; // Nueva instancia para el gráfico de tendencias
+        let trendChartInstance = null;
         const MONTHS_IN_YEAR = 12;
         let lastAmortizationTableData = []; 
-        let clientData = {}; // Objeto para almacenar datos del cliente
-        let consecutiveCounter = 1; // Contador para el consecutivo
-        let fullTrendData = []; // Datos completos para el gráfico de tendencias
+        let clientData = {};
+        let consecutiveCounter = 1; 
+        let fullTrendData = []; 
         
-        // --- FUNCIONES INTERFAZ DE AYUDA ---
         function toggleHelpModal() {
             const modal = document.getElementById('help-modal');
             const content = document.getElementById('help-modal-content');
             
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden');
-                // Pequeño timeout para permitir que se quite el hidden antes de animar opacidad
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
@@ -435,7 +397,7 @@
                 content.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                }, 300); // Esperar a que termine la transición
+                }, 300);
             }
         }
 
@@ -446,27 +408,17 @@
             const contentSuggestions = document.getElementById('content-suggestions');
 
             if (tabName === 'tutorial') {
-                // Activar estilos tab tutorial
                 tabTutorial.classList.add('bg-gray-50', 'text-infihuila-blue', 'border-b-2', 'border-infihuila-blue');
                 tabTutorial.classList.remove('text-gray-500');
-                
-                // Desactivar estilos tab suggestions
                 tabSuggestions.classList.remove('bg-gray-50', 'text-infihuila-blue', 'border-b-2', 'border-infihuila-blue');
                 tabSuggestions.classList.add('text-gray-500');
-
-                // Mostrar contenido
                 contentTutorial.classList.remove('hidden');
                 contentSuggestions.classList.add('hidden');
             } else {
-                // Activar estilos tab suggestions
                 tabSuggestions.classList.add('bg-gray-50', 'text-infihuila-blue', 'border-b-2', 'border-infihuila-blue');
                 tabSuggestions.classList.remove('text-gray-500');
-
-                // Desactivar estilos tab tutorial
                 tabTutorial.classList.remove('bg-gray-50', 'text-infihuila-blue', 'border-b-2', 'border-infihuila-blue');
                 tabTutorial.classList.add('text-gray-500');
-
-                // Mostrar contenido
                 contentSuggestions.classList.remove('hidden');
                 contentTutorial.classList.add('hidden');
             }
@@ -476,12 +428,10 @@
             e.preventDefault();
             const btn = e.target.querySelector('button');
             const originalText = btn.textContent;
-            
             btn.textContent = "¡Enviado!";
             btn.classList.remove('bg-infihuila-green');
             btn.classList.add('bg-green-600');
             btn.disabled = true;
-
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.classList.add('bg-infihuila-green');
@@ -493,24 +443,17 @@
             }, 1500);
         }
 
-        // --- FUNCIONES DE CÁLCULO ---
-
         function calcularCuotaFija(P, i, n) {
             if (i === 0) return P / n;
             const potencia = Math.pow(1 + i, n);
             return P * (i * potencia) / (potencia - 1);
         }
 
-        // --- FUNCIONES DE GESTIÓN DE FORMULARIO ---
-
         function restablecerFormulario() {
-            // Limpiar inputs del cliente
             document.getElementById('nombre-cliente').value = '';
             document.getElementById('id-cliente').value = '';
             document.getElementById('telefono-cliente').value = '';
             document.getElementById('email-cliente').value = '';
-            
-            // Limpiar clases de error
             const inputsCliente = [
                 document.getElementById('nombre-cliente'),
                 document.getElementById('id-cliente'),
@@ -519,8 +462,6 @@
             ];
             inputsCliente.forEach(input => input.classList.remove('input-error'));
             document.getElementById('error-cliente').classList.add('hidden');
-
-            // Resetear valores financieros a por defecto
             document.getElementById('monto').value = "6000000000";
             document.getElementById('plazo').value = "60";
             document.getElementById('tipo-amortizacion').value = "Constante";
@@ -529,11 +470,7 @@
             document.getElementById('tasa-base-input').value = "11.15";
             document.getElementById('spread').value = "0.0";
             document.getElementById('frecuencia-amortizacion').value = "mensual";
-            
-            // Resetear alerta de plazo
             document.getElementById('plazo-warning').classList.add('hidden');
-
-            // Resetear resultados visuales
             document.getElementById('detalle-cuota').textContent = "---";
             document.getElementById('detalle-capital-fijo').textContent = "---";
             document.getElementById('detalle-interes-inicial').textContent = "---";
@@ -543,30 +480,24 @@
             document.getElementById('detalle-capital-total').textContent = "---";
             document.getElementById('detalle-interes-total').textContent = "---";
             document.getElementById('detalle-total-pagado').textContent = "---";
-
-            // Ocultar sección de tabla
+            
+            // Ocultar secciones
             document.getElementById('tabla-seccion').classList.add('hidden');
-            document.getElementById('trend-section').classList.add('hidden'); // Ocultar gráfico de tendencias
+            document.getElementById('trend-section-container').classList.add('hidden'); 
 
-            // Limpiar Gráficos
             if (pieChartInstance) { pieChartInstance.destroy(); pieChartInstance = null; }
             if (barChartInstance) { barChartInstance.destroy(); barChartInstance = null; }
             if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
 
-            // Deshabilitar botones de descarga
             document.getElementById('download-excel-btn').disabled = true;
             document.getElementById('download-pdf-btn').disabled = true;
 
-            // Resetear variables internas
             lastAmortizationTableData = [];
             fullTrendData = [];
             clientData = {};
-
-            // Opcional: Update Labels para que coincidan con la Tasa Default
             updateTasaLabels();
         }
 
-        // --- FUNCIONES DE EXPORTACIÓN ---
         const formatCurrency = (amount) => {
             return new Intl.NumberFormat('es-CO', {
                 style: 'currency',
@@ -577,8 +508,6 @@
 
         function exportToExcel() {
             if (lastAmortizationTableData.length === 0) return;
-
-            // Preparar datos para Excel incluyendo info del cliente
             const infoCliente = [
                 ['SIMULADOR DE CRÉDITO INFIHUILA'],
                 ['Consecutivo:', `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`],
@@ -590,12 +519,10 @@
                 [''],
                 ['TABLA DE AMORTIZACIÓN']
             ];
-
             const headers = ['N.º Cuota', 'Fecha (Est.)', 'Cuota Total', 'Interés', 'Capital', 'Saldo Final'];
             const data = lastAmortizationTableData.map(item => [
                 item.nCuota, item.fecha, item.cuota, item.interes, item.capital, item.saldoFinal
             ]);
-
             const ws = XLSX.utils.aoa_to_sheet([...infoCliente, headers, ...data]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Simulacion");
@@ -615,13 +542,9 @@
                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
             });
 
-            // --- PORTADA (Página 1) ---
-            
-            // Fondo de cabecera decorativo
-            doc.setFillColor(0, 108, 114); // Infihuila Blue
+            doc.setFillColor(0, 108, 114); 
             doc.rect(0, 0, PAGE_WIDTH, 40, 'F');
             
-            // Título Principal en Portada
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
             doc.setFont("helvetica", "bold");
@@ -630,7 +553,6 @@
             doc.setFont("helvetica", "normal");
             doc.text("INFIHUILA", PAGE_WIDTH / 2, 30, { align: 'center' });
 
-            // Sección I: Datos del Cliente
             let yPos = 60;
             doc.setTextColor(0, 108, 114);
             doc.setFontSize(16);
@@ -648,17 +570,13 @@
 
             doc.setFont("helvetica", "bold"); doc.text("Razón Social:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(clientData.nombre, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Identificación:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(clientData.id, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Teléfono:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(clientData.telefono, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Email:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(clientData.email, valueX, yPos); yPos += lineHeight;
 
-            // Sección II: Resumen del Crédito
             yPos += 15;
             doc.setTextColor(0, 108, 114);
             doc.setFontSize(16);
@@ -669,7 +587,6 @@
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(11);
             
-            // Recuperar valores calculados para el reporte
             const monto = document.getElementById('monto').value;
             const plazo = document.getElementById('plazo').value;
             const tasaNom = document.getElementById('detalle-tasa-nominal').textContent;
@@ -679,35 +596,26 @@
 
             doc.setFont("helvetica", "bold"); doc.text("Consecutivo:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(`N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Monto Solicitado:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(formatCurrency(monto), valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Plazo:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(`${plazo} Meses`, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Tasa Nominal (TNA):", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(tasaNom, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Tasa Mensual:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(tasaMes, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Amortización:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(tipoAmort, valueX, yPos); yPos += lineHeight;
-
             doc.setFont("helvetica", "bold"); doc.text("Total Estimado a Pagar:", labelX, yPos);
             doc.setFont("helvetica", "normal"); doc.text(totalPagado, valueX, yPos); yPos += lineHeight;
 
-            // Pie de página de Portada
             doc.setFontSize(9);
             doc.setTextColor(100);
             doc.text("Generado por Simulador Oficial INFIHUILA", PAGE_WIDTH/2, PAGE_HEIGHT - 20, { align: 'center' });
             doc.text(`Fecha: ${dateTime}`, PAGE_WIDTH/2, PAGE_HEIGHT - 15, { align: 'center' });
 
-            // --- PÁGINA 2: TABLA DE AMORTIZACIÓN ---
             doc.addPage();
 
-            // Cabecera simple para páginas internas
             const addInternalHeader = (doc) => {
                 doc.setFillColor(0, 108, 114); 
                 doc.rect(0, 0, PAGE_WIDTH, 15, 'F');
@@ -744,7 +652,7 @@
                 styles: { fontSize: 7, cellPadding: 1 },
                 columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
                 didDrawPage: (data) => {
-                    if (data.pageNumber > 2) addInternalHeader(doc); // Header en páginas subsiguientes (La 1 es portada, la 2 ya tiene header manual)
+                    if (data.pageNumber > 2) addInternalHeader(doc); 
                     addFooter(doc, data.pageNumber, doc.internal.pages.length - 1); 
                 }
             });
@@ -752,8 +660,6 @@
             const totalPages = doc.internal.pages.length - 1;
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
-                // Si i=1 (Portada), el footer es distinto, pero aquí sobreescribimos. 
-                // Mejor lógica: solo footer estándar para páginas > 1
                 if (i > 1) {
                    addFooter(doc, i, totalPages);
                 }
@@ -761,7 +667,6 @@
             doc.save(`Simulacion_${clientData.id}.pdf`);
         }
 
-        // --- SIMULACIÓN ---
         async function simularCredito() {
             const button = document.querySelector('button[onclick="simularCredito()"]');
             const spinner = document.getElementById('loading-spinner');
@@ -769,12 +674,10 @@
             const excelBtn = document.getElementById('download-excel-btn');
             const pdfBtn = document.getElementById('download-pdf-btn');
 
-            // 0. Validación de Datos del Cliente
             const nombre = document.getElementById('nombre-cliente').value.trim();
             const id = document.getElementById('id-cliente').value.trim();
             const tel = document.getElementById('telefono-cliente').value.trim();
             const email = document.getElementById('email-cliente').value.trim();
-
             const inputsCliente = [
                 document.getElementById('nombre-cliente'),
                 document.getElementById('id-cliente'),
@@ -782,7 +685,6 @@
                 document.getElementById('email-cliente')
             ];
 
-            // Limpiar errores previos
             inputsCliente.forEach(input => input.classList.remove('input-error'));
             errorMsg.classList.add('hidden');
 
@@ -798,21 +700,17 @@
                 return; 
             }
 
-            // Guardar datos validados
             clientData = { nombre, id, telefono: tel, email };
 
-            // Inicio Simulación
             spinner.classList.remove('hidden');
             button.disabled = true;
             excelBtn.disabled = true;
             pdfBtn.disabled = true;
             document.getElementById('tabla-seccion').classList.add('hidden');
-            document.getElementById('trend-section').classList.add('hidden');
+            document.getElementById('trend-section-container').classList.add('hidden');
 
-            // 1. Obtención y validación de Inputs Financieros
             let monto = parseFloat(document.getElementById('monto').value);
             let plazo = parseInt(document.getElementById('plazo').value);
-
             let spreadInput = document.getElementById('spread').value;
             let spread = spreadInput === '' ? 0 : parseFloat(spreadInput);
             spread = spread / 100;
@@ -844,7 +742,6 @@
                 finalPeriodoGracia = 0;
             }
 
-            // Cálculo de Tasas
             const tasaBase = tasaBaseInput / 100;
             const tasaAnualTotal = tasaBase + spread;
             let tasaMensual = 0;
@@ -889,7 +786,6 @@
             const amortizacionAnual = {};
             const fechaInicio = new Date();
 
-            // Variables para tendencia
             fullTrendData = [];
 
             let factorFrecuencia = 1;
@@ -934,7 +830,6 @@
 
                 let saldoFinal = saldoPendiente - capital;
                 
-                // CORRECCIÓN PARA LA ÚLTIMA CUOTA
                 if (i === finalPlazo || saldoFinal < 1) {
                     capital = saldoPendiente; 
                     saldoFinal = 0;
@@ -956,7 +851,6 @@
                     interes: interesRounded, capital: capitalRounded, saldoFinal: saldoFinalRounded
                 });
 
-                // Lógica de datos de tendencia (Manejo de % para evitar división por cero en cuotas 0)
                 let pctCapital = 0;
                 let pctInteres = 0;
                 if (cuotaActual > 0) {
@@ -969,7 +863,7 @@
                     year: fechaCuota.getFullYear(),
                     pctCapital: pctCapital,
                     pctInteres: pctInteres,
-                    rawDate: fechaCuota // Guardamos fecha objeto para ordenar si es necesario
+                    rawDate: fechaCuota 
                 });
 
                 const year = fechaCuota.getFullYear();
@@ -981,10 +875,8 @@
             lastAmortizationTableData = tablaAmortizacion;
             renderPieChart(totalCapital, totalInteres);
             renderBarChart(amortizacionAnual);
-            
-            // Lógica para el nuevo gráfico de tendencia
             populateYearFilter(fullTrendData);
-            filterTrendChart(); // Renderiza con "Todos" por defecto
+            filterTrendChart(); 
             
             const cuotaMostrar = tipoAmortizacion === 'Fija' ? cuotaFijaConstante : capitalFijoAmortizacion + interesPrimeraAmortizacion;
             document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaMostrar));
@@ -1015,23 +907,20 @@
 
             renderAmortizationTable(tablaAmortizacion);
             document.getElementById('tabla-seccion').classList.remove('hidden');
-            document.getElementById('trend-section').classList.remove('hidden');
+            document.getElementById('trend-section-container').classList.remove('hidden');
 
             spinner.classList.add('hidden');
             button.disabled = false;
             excelBtn.disabled = false;
             pdfBtn.disabled = false;
 
-            // INCREMENTAR CONSECUTIVO AL FINAL DE LA SIMULACIÓN EXITOSA
             consecutiveCounter++;
             document.getElementById('btn-consecutivo').textContent = `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`;
         }
 
         function populateYearFilter(data) {
             const select = document.getElementById('trend-year-filter');
-            // Mantener solo la primera opción "Todos los años"
             select.innerHTML = '<option value="all">Todos los años</option>';
-            
             const years = [...new Set(data.map(item => item.year))];
             years.forEach(year => {
                 const option = document.createElement('option');
@@ -1068,7 +957,7 @@
                         {
                             label: '% Capital Mensual',
                             data: dataCapital,
-                            borderColor: '#006C72', // Infihuila Blue
+                            borderColor: '#006C72', 
                             backgroundColor: 'rgba(0, 108, 114, 0.1)',
                             borderWidth: 2,
                             pointRadius: 2,
@@ -1078,7 +967,7 @@
                         {
                             label: '% Interés Mensual',
                             data: dataInteres,
-                            borderColor: '#CCD400', // Infihuila Green
+                            borderColor: '#CCD400', 
                             backgroundColor: 'rgba(204, 212, 0, 0.1)',
                             borderWidth: 2,
                             pointRadius: 2,
@@ -1090,10 +979,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { position: 'top' },
                         tooltip: {
@@ -1111,9 +997,7 @@
                             title: { display: true, text: 'Porcentaje (%)' }
                         },
                         x: {
-                            ticks: {
-                                maxTicksLimit: 12 // Evitar saturación en eje X
-                            }
+                            ticks: { maxTicksLimit: 12 }
                         }
                     }
                 }
@@ -1247,7 +1131,6 @@
             });
             document.getElementById('tasa-referencia').addEventListener('change', updateTasaLabels);
             
-            // Listener para advertencia de plazo
             const plazoInput = document.getElementById('plazo');
             const plazoWarning = document.getElementById('plazo-warning');
             
