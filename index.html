@@ -80,6 +80,7 @@
         <header class="w-full mb-4 sm:mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border-t-4 border-infihuila-green">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
                 <div class="w-full md:w-auto flex justify-center md:justify-start">
+                    <!-- REFERENCIA AL NUEVO LOGO -->
                     <img src="Logo_Infi.png" 
                          alt="Logo INFIHUILA" 
                          class="h-12 xs:h-14 sm:h-16 w-auto object-contain transition-all duration-300"
@@ -883,7 +884,7 @@
             document.getElementById('detalle-interes-inicial').textContent = formatCurrency(Math.round(interesPrimeraAmortizacion));
             
             if (tipoAmortizacion === 'Constante') {
-                document.getElementById('label-cuota-fija').textContent = '1. Cuota Mensual Inicial:';
+                document.getElementById('label-cuota-fija').textContent = '1. Cuota Inicial:';
                 document.getElementById('row-capital-fijo').classList.remove('hidden');
                 document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijoAmortizacion));
             } else {
