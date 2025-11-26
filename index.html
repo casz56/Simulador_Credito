@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Viewport configurado para auto-escala y prevención de zoom no deseado en inputs -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Simulador de Créditos - Infihuila</title>
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,20 +17,23 @@
     <!-- Carga de la librería autoTable para jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- Configuración de la paleta de colores de Infihuila (Aproximación institucional) -->
+    <!-- Configuración de la paleta de colores de Infihuila -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'infihuila-blue': '#006C72', // Color Primario (Verde Institucional Oscuro)
-                        'infihuila-green': '#CCD400', // Color Secundario (Lima/Amarillo Institucional)
+                        'infihuila-blue': '#006C72', // Color Primario
+                        'infihuila-green': '#CCD400', // Color Secundario
                         'infihuila-light': '#f5f5f5', // Fondo
                         'infihuila-text': '#1F2937', // Texto
                     },
                     fontFamily: {
                         sans: ['"Tw Cen MT"', 'sans-serif'],
                     },
+                    screens: {
+                        'xs': '475px', // Breakpoint extra pequeño para móviles
+                    }
                 }
             }
         }
@@ -37,11 +41,13 @@
     <style>
         body {
             font-family: "Tw Cen MT", sans-serif;
+            -webkit-font-smoothing: antialiased; /* Suavizado de fuentes */
         }
         .card {
             border-radius: 0.75rem; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 4, 6, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             background-color: white;
+            transition: transform 0.2s ease-in-out;
         }
         #tabla-seccion {
             transition: all 0.3s ease-in-out;
@@ -60,207 +66,209 @@
         .floating-btn-anim {
             animation: float 3s ease-in-out infinite;
         }
+        /* Asegurar que los inputs no hagan zoom en iOS al enfocarse */
+        input, select, textarea {
+            font-size: 16px; 
+        }
     </style>
 </head>
-<body class="bg-infihuila-light min-h-screen p-4 sm:p-6 lg:p-8 font-sans text-infihuila-text relative">
+<body class="bg-infihuila-light min-h-screen p-3 sm:p-6 lg:p-8 font-sans text-infihuila-text relative overflow-x-hidden">
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto w-full">
         <!-- ENCABEZADO PRINCIPAL -->
-        <header class="w-full mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border border-infihuila-green">
-            <div class="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4">
-                <!-- Logo -->
-                <div class="w-full sm:w-auto flex justify-start sm:justify-start">
-                    <!-- Se referencia el archivo Logo_Infi.png (Logo Antiguo) -->
+        <!-- Flex-col en móvil, Flex-row en tablet/desktop -->
+        <header class="w-full mb-4 sm:mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border-t-4 border-infihuila-green">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
+                <!-- Logo: Tamaño ajustable -->
+                <div class="w-full md:w-auto flex justify-center md:justify-start">
                     <img src="Logo_Infi.png" 
                          alt="Logo INFIHUILA" 
-                         class="h-14 sm:h-16 w-auto object-contain"
+                         class="h-12 xs:h-14 sm:h-16 w-auto object-contain transition-all duration-300"
                          onerror="this.onerror=null;this.src='https://placehold.co/140x64/006C72/FFFFFF?text=Logo+INFIHUILA';">
                 </div>
 
-                <!-- Títulos -->
-                <div class="flex-1 text-center">
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-infihuila-green leading-tight">
+                <!-- Títulos: Texto escalable -->
+                <div class="flex-1 text-center w-full">
+                    <h1 class="text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-extrabold text-infihuila-green leading-tight break-words">
                         SIMULADOR DE CRÉDITOS
                     </h1>
-                    <h2 class="text-lg sm:text-xl lg:text-2xl font-normal mt-1 text-infihuila-blue leading-snug">
+                    <h2 class="text-sm xs:text-base sm:text-xl lg:text-2xl font-normal mt-1 text-infihuila-blue leading-snug">
                         Gestión Comercial - INFIHUILA
                     </h2>
                 </div>
 
-                <!-- Botones -->
-                <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2 justify-end sm:justify-end">
-                    <button id="download-excel-btn" onclick="exportToExcel()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                <!-- Botones: Full width en móvil, auto en desktop -->
+                <div class="w-full md:w-auto flex flex-col xs:flex-row gap-2 justify-center md:justify-end">
+                    <button id="download-excel-btn" onclick="exportToExcel()" class="flex-1 md:flex-none justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold bg-infihuila-green text-white rounded-lg shadow-md hover:bg-infihuila-blue hover:shadow-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
                         Descargar Excel
                     </button>
-                    <button id="download-pdf-btn" onclick="exportToPDF()" class="px-4 py-2 text-xs sm:text-sm lg:text-base font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green transition duration-300 ease-in-out disabled:opacity-50" disabled>
+                    <button id="download-pdf-btn" onclick="exportToPDF()" class="flex-1 md:flex-none justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green hover:shadow-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
                         Descargar PDF
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-max">
+        <!-- GRID PRINCIPAL: 1 Columna en móvil, 3 en Desktop grande -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 auto-rows-max w-full">
             
             <!-- COLUMNA IZQUIERDA: DATOS Y CONFIGURACIÓN -->
-            <div class="lg:col-span-1 space-y-6">
+            <div class="lg:col-span-1 space-y-4 sm:space-y-6 w-full">
                 
                 <!-- SECCIÓN: I. DATOS DEL CLIENTE -->
-                <div class="card p-5 sm:p-6 lg:p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-xl sm:text-2xl font-bold text-infihuila-blue mt-1">I. Datos del Cliente</h3>
-                        <!-- Contenedor Botones Superiores -->
-                        <div class="flex flex-col gap-2 items-end">
-                            <!-- Botón Consecutivo -->
-                            <button id="btn-consecutivo" class="px-3 py-1 text-[10px] sm:text-xs font-semibold border border-infihuila-blue text-infihuila-blue rounded-full shadow-sm bg-white whitespace-nowrap cursor-default">
-                                Consecutivo N.º 001-2025
-                            </button>
-                            <!-- Botón Restablecer Formulario -->
-                            <button onclick="restablecerFormulario()" class="px-3 py-1 text-[10px] sm:text-xs font-semibold border border-infihuila-blue text-infihuila-blue rounded-full shadow-sm hover:bg-infihuila-blue hover:text-white transition duration-300 ease-in-out whitespace-nowrap cursor-pointer">
-                                ↺ Restablecer Formulario
+                <div class="card p-4 sm:p-6 w-full">
+                    <div class="flex flex-wrap justify-between items-start mb-4 gap-2">
+                        <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue">I. Datos del Cliente</h3>
+                        <!-- Botones pequeños utilitarios -->
+                        <div class="flex flex-col gap-2 items-end w-full sm:w-auto">
+                            <span id="btn-consecutivo" class="px-2 py-1 text-[10px] sm:text-xs font-semibold border border-infihuila-blue text-infihuila-blue rounded-md bg-white select-none">
+                                N.º 001-2025
+                            </span>
+                            <button onclick="restablecerFormulario()" class="px-2 py-1 text-[10px] sm:text-xs font-semibold border border-infihuila-blue text-infihuila-blue rounded-full hover:bg-infihuila-blue hover:text-white transition-colors duration-300">
+                                ↺ Restablecer
                             </button>
                         </div>
                     </div>
                     
-                    <div class="mb-4">
-                        <label for="nombre-cliente" class="block text-sm font-medium mb-1">Nombre / Razón Social <span class="text-red-500">*</span></label>
-                        <input type="text" id="nombre-cliente" placeholder="Ej: Empresa S.A.S o Juan Pérez" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green uppercase">
+                    <div class="space-y-3 sm:space-y-4">
+                        <div>
+                            <label for="nombre-cliente" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Nombre / Razón Social <span class="text-red-500">*</span></label>
+                            <input type="text" id="nombre-cliente" placeholder="Ej: Juan Pérez" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all uppercase">
+                        </div>
+                        <div>
+                            <label for="id-cliente" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Identificación (NIT/CC) <span class="text-red-500">*</span></label>
+                            <input type="text" id="id-cliente" placeholder="Ej: 900.123.456-7" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                        </div>
+                        <div>
+                            <label for="telefono-cliente" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Número Telefónico <span class="text-red-500">*</span></label>
+                            <input type="tel" id="telefono-cliente" placeholder="Ej: 310 123 4567" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                        </div>
+                        <div>
+                            <label for="email-cliente" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Correo Electrónico <span class="text-red-500">*</span></label>
+                            <input type="email" id="email-cliente" placeholder="Ej: contacto@empresa.com" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                        </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label for="id-cliente" class="block text-sm font-medium mb-1">Identificación (NIT/CC) <span class="text-red-500">*</span></label>
-                        <input type="text" id="id-cliente" placeholder="Ej: 900.123.456-7" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="telefono-cliente" class="block text-sm font-medium mb-1">Número Telefónico <span class="text-red-500">*</span></label>
-                        <input type="tel" id="telefono-cliente" placeholder="Ej: 310 123 4567" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
-
-                    <div class="mb-2">
-                        <label for="email-cliente" class="block text-sm font-medium mb-1">Correo Electrónico <span class="text-red-500">*</span></label>
-                        <input type="email" id="email-cliente" placeholder="Ej: contacto@empresa.com" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
-                    <p id="error-cliente" class="text-red-500 text-xs hidden font-bold mt-2">⚠️ Por favor diligencie todos los datos del cliente para continuar.</p>
+                    <p id="error-cliente" class="text-red-500 text-xs hidden font-bold mt-2 bg-red-50 p-2 rounded">⚠️ Datos incompletos.</p>
                 </div>
 
                 <!-- SECCIÓN II: INFORMACIÓN DEL CRÉDITO -->
-                <div class="card p-5 sm:p-6 lg:p-6 h-fit">
-                    <h3 class="text-xl sm:text-2xl font-bold text-infihuila-blue mb-4">II. Información del crédito</h3>
+                <div class="card p-4 sm:p-6 h-fit w-full">
+                    <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue mb-4">II. Información del crédito</h3>
 
-                    <!-- Input Monto -->
-                    <div class="mb-4">
-                        <label for="monto" class="block text-sm font-medium mb-1">Monto del Crédito ($)</label>
-                        <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
+                    <div class="space-y-3 sm:space-y-4">
+                        <!-- Monto -->
+                        <div>
+                            <label for="monto" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Monto del Crédito ($)</label>
+                            <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                        </div>
 
-                    <!-- Input Plazo -->
-                    <div class="mb-4">
-                        <label for="plazo" class="block text-sm font-medium mb-1">Plazo (Meses)</label>
-                        <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                        <!-- Mensaje de Advertencia Plazo > 96 (Color ajustado a Verde Institucional) -->
-                        <p id="plazo-warning" class="hidden text-xs text-infihuila-blue font-bold mt-1 bg-teal-50 p-2 rounded border border-infihuila-blue">
-                            ⚠️ El plazo superior a 96 meses deberá ser aprobado por el consejo directivo del Infihuila.
-                        </p>
-                    </div>
+                        <!-- Plazo -->
+                        <div>
+                            <label for="plazo" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Plazo (Meses)</label>
+                            <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                            <!-- Mensaje Advertencia -->
+                            <p id="plazo-warning" class="hidden text-[10px] sm:text-xs text-infihuila-blue font-bold mt-2 bg-teal-50 p-2 rounded border border-infihuila-blue animate-pulse">
+                                ⚠️ Plazo > 96 meses: Requiere aprobación del consejo directivo.
+                            </p>
+                        </div>
 
-                    <!-- Selección Tipo de Amortización -->
-                    <div class="mb-4">
-                        <label for="tipo-amortizacion" class="block text-sm font-medium mb-1">Tipo de Amortización</label>
-                        <select id="tipo-amortizacion" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                            <option value="Constante" selected>Capital Constante (Alemán)</option>
-                            <option value="Fija">Cuota Fija (Francés)</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Capital Constante: El abono a capital es fijo y la cuota disminuye.</p>
-                    </div>
-                    
-                    <!-- Input Periodo de Gracia -->
-                    <div class="mb-4">
-                        <label for="periodo-gracia" class="block text-sm font-medium mb-1">Periodo de Gracia (Meses)</label>
-                        <select id="periodo-gracia" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                            <!-- Opciones JS -->
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Durante este periodo solo se pagan intereses.</p>
-                    </div>
+                        <!-- Tipo Amortización -->
+                        <div>
+                            <label for="tipo-amortizacion" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tipo de Amortización</label>
+                            <select id="tipo-amortizacion" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
+                                <option value="Constante" selected>Capital Constante (Alemán)</option>
+                                <option value="Fija">Cuota Fija (Francés)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Periodo Gracia -->
+                        <div>
+                            <label for="periodo-gracia" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Periodo de Gracia</label>
+                            <select id="periodo-gracia" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
+                                <!-- Opciones JS -->
+                            </select>
+                        </div>
 
-                    <!-- Selección Tasa de Referencia -->
-                    <div class="mb-4">
-                        <label for="tasa-referencia" class="block text-sm font-medium mb-1">Tipo de Tasa Base</label>
-                        <select id="tasa-referencia" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                            <option value="DTF">DTF</option>
-                            <option value="IBR">IBR</option>
-                            <option value="TNA" selected>Tasa Nominal Anual (TNA)</option>
-                            <option value="EA">Tasa Efectiva Anual (E.A.)</option>
-                        </select>
-                        <p id="tasa-explicacion" class="text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
-                    </div>
-                    
-                    <!-- Input Tasa Base Manual -->
-                    <div class="mb-4">
-                        <label for="tasa-base-input" class="block text-sm font-medium mb-1">Valor de Tasa Base (%)</label> 
-                        <input type="number" id="tasa-base-input" value="11.15" min="0" max="100" step="0.0001" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
+                        <!-- Tasa Referencia -->
+                        <div>
+                            <label for="tasa-referencia" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tipo de Tasa Base</label>
+                            <select id="tasa-referencia" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
+                                <option value="DTF">DTF</option>
+                                <option value="IBR">IBR</option>
+                                <option value="TNA" selected>Tasa Nominal Anual (TNA)</option>
+                                <option value="EA">Tasa Efectiva Anual (E.A.)</option>
+                            </select>
+                            <!-- Re-agregado el elemento faltante para la explicación de la tasa -->
+                            <p id="tasa-explicacion" class="text-[10px] sm:text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
+                        </div>
+                        
+                        <!-- Tasa Base y Spread (Grid interno) -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="tasa-base-input" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tasa Base (%)</label> 
+                                <input type="number" id="tasa-base-input" value="11.15" min="0" max="100" step="0.0001" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green">
+                            </div>
+                            <div>
+                                <label for="spread" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Spread (Pts)</label>
+                                <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green">
+                            </div>
+                        </div>
 
-                    <!-- Input Spread -->
-                    <div class="mb-4">
-                        <label for="spread" class="block text-sm font-medium mb-1">Spread (Puntos %)</label>
-                        <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                    </div>
+                        <!-- Frecuencia -->
+                        <div>
+                            <label for="frecuencia-amortizacion" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Forma de amortización</label>
+                            <select id="frecuencia-amortizacion" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
+                                <option value="mensual" selected>Mensual</option>
+                                <option value="trimestral">Trimestral</option>
+                                <option value="semestral">Semestral</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                        </div>
 
-                    <!-- Forma de Amortización -->
-                    <div class="mb-4">
-                        <label for="frecuencia-amortizacion" class="block text-sm font-medium mb-1">Forma de amortización</label>
-                        <select id="frecuencia-amortizacion" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
-                            <option value="mensual" selected>Mensual</option>
-                            <option value="trimestral">Trimestral</option>
-                            <option value="semestral">Semestral</option>
-                            <option value="anual">Anual</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Define la frecuencia de los pagos a capital.</p>
+                        <!-- Botón Simular -->
+                        <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-bold py-3.5 rounded-xl text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transform active:scale-95 mt-4">
+                            <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
+                            Simular Crédito
+                        </button>
                     </div>
-
-                    <!-- Botón de Simulación -->
-                    <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
-                        <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
-                        Simular Crédito
-                    </button>
 
                     <!-- III. DETALLES DEL CRÉDITO -->
-                    <div id="detalles-credito" class="mt-6 border-t pt-4">
-                        <h4 class="text-base sm:text-lg font-bold mb-3 text-infihuila-blue">III. Detalles del crédito (Valores Iniciales)</h4>
+                    <div id="detalles-credito" class="mt-6 border-t border-gray-200 pt-4">
+                        <h4 class="text-sm sm:text-lg font-bold mb-3 text-infihuila-blue">III. Detalles (Valores Iniciales)</h4>
                         <div class="space-y-2 text-xs sm:text-sm">
-                            <p class="flex justify-between items-center gap-4"><span class="font-medium" id="label-cuota-fija">1. Cuota Mensual Inicial:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
-                            <hr class="border-gray-200">
-                            <p id="row-capital-fijo" class="flex justify-between items-center gap-4"><span class="font-medium">2. Capital Fijo Amortizado:</span> <span id="detalle-capital-fijo" class="font-semibold text-infihuila-text">---</span></p>
-                            <p class="flex justify-between items-center gap-4"><span class="font-medium">3. Intereses Mensuales (Inicial):</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
-                            <hr class="border-gray-200">
-                            <p class="flex justify-between items-center gap-4"><span class="font-medium">4. Tasa Mensual (TEM/TNM):</span> <span id="detalle-tasa-mensual" class="font-bold text-infihuila-text">---</span></p>
-                            <p class="flex justify-between items-center gap-4"><span class="font-medium">5. Tasa Final:</span> <span id="detalle-tasa-efectiva" class="font-bold text-infihuila-text">---</span></p>
-                            <p id="row-tasa-nominal" class="flex justify-between items-center gap-4"><span class="font-medium">6. Tasa Nominal Anual (TNA):</span> <span id="detalle-tasa-nominal" class="text-xs sm:text-sm font-bold text-infihuila-text">---</span></p>
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600" id="label-cuota-fija">1. Cuota Inicial:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
+                            <hr class="border-gray-100">
+                            <p id="row-capital-fijo" class="flex justify-between items-center"><span class="font-medium text-gray-600">2. Capital Fijo:</span> <span id="detalle-capital-fijo" class="font-semibold text-gray-800">---</span></p>
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">3. Interés Inicial:</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
+                            <hr class="border-gray-100">
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">4. Tasa Mensual:</span> <span id="detalle-tasa-mensual" class="font-bold text-gray-800">---</span></p>
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">5. Tasa Final (E.A):</span> <span id="detalle-tasa-efectiva" class="font-bold text-gray-800">---</span></p>
+                            <p id="row-tasa-nominal" class="flex justify-between items-center"><span class="font-medium text-gray-600">6. Tasa Nominal (TNA):</span> <span id="detalle-tasa-nominal" class="font-bold text-gray-800">---</span></p>
                         </div>
-                        <div class="mt-4 pt-2 border-t border-gray-200 space-y-1 text-xs sm:text-sm">
-                             <h4 class="text-base sm:text-lg font-bold mb-2 text-infihuila-blue">IV. Totales del Crédito</h4>
-                             <p class="flex justify-between items-center gap-4"><span class="font-medium">Capital Total Amortizado:</span> <span id="detalle-capital-total" class="font-semibold text-infihuila-text">---</span></p>
-                             <p class="flex justify-between items-center gap-4"><span class="font-medium">Intereses Totales Pagados:</span> <span id="detalle-interes-total" class="font-semibold text-infihuila-green">---</span></p>
-                             <p class="flex justify-between items-center gap-4"><span class="font-medium font-bold">Total Pagado:</span> <span id="detalle-total-pagado" class="font-extrabold text-infihuila-blue">---</span></p>
+                        <div class="mt-4 pt-3 border-t-2 border-dashed border-gray-200 space-y-2 text-xs sm:text-sm bg-gray-50 p-2 rounded-lg">
+                             <h4 class="text-sm sm:text-base font-bold mb-1 text-infihuila-blue">IV. Totales Estimados</h4>
+                             <p class="flex justify-between items-center"><span class="font-medium">Capital Total:</span> <span id="detalle-capital-total" class="font-semibold text-gray-800">---</span></p>
+                             <p class="flex justify-between items-center"><span class="font-medium">Intereses Totales:</span> <span id="detalle-interes-total" class="font-semibold text-infihuila-green">---</span></p>
+                             <p class="flex justify-between items-center mt-2 pt-2 border-t border-gray-300"><span class="font-bold text-gray-900 text-sm">TOTAL A PAGAR:</span> <span id="detalle-total-pagado" class="font-extrabold text-infihuila-blue text-base sm:text-lg">---</span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- COLUMNA DERECHA: GRÁFICOS -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-4 sm:space-y-6 flex flex-col w-full h-full">
                 <!-- V. Gráfico de Torta -->
-                <div class="card p-5 sm:p-6 lg:p-6">
-                    <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">V. Gráfica del porcentaje de participación del crédito</h3>
-                    <div class="relative h-64 md:h-80 lg:h-96">
+                <div class="card p-4 sm:p-6 w-full flex flex-col">
+                    <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">V. Distribución del Crédito</h3>
+                    <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-[400px]">
                         <canvas id="pieChart"></canvas>
                     </div>
                 </div>
 
                 <!-- VI. Gráfico de Barras -->
-                <div class="card p-5 sm:p-6 lg:p-6">
-                    <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">VI. Gráfica del comportamiento del crédito por vigencia</h3>
-                    <div class="relative h-72 sm:h-80 md:h-96 lg:h-[420px]">
+                <div class="card p-4 sm:p-6 w-full flex flex-col flex-grow">
+                    <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VI. Comportamiento por Vigencia</h3>
+                    <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-full min-h-[300px]">
                         <canvas id="barChart"></canvas>
                     </div>
                 </div>
@@ -268,45 +276,48 @@
         </main>
 
         <!-- VII. Tabla de Amortización -->
-        <section id="tabla-seccion" class="mt-8 hidden">
-            <div class="card p-5 sm:p-6 lg:p-6">
-                <h3 class="text-xl sm:text-2xl font-bold mb-4 text-infihuila-blue">VII. Tabla de Amortización Completa</h3>
-                <div class="w-full overflow-x-auto">
-                    <table id="tabla-a-exportar" class="min-w-full text-xs sm:text-sm divide-y divide-gray-200">
-                        <thead>
-                            <tr class="bg-infihuila-blue text-white text-[11px] sm:text-xs uppercase tracking-wider">
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-left">N.º Cuota</th>
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-left">Fecha (Est.)</th>
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Cuota Total</th>
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Interés</th>
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Capital</th>
-                                <th class="px-2 sm:px-3 py-2 sm:py-3 text-right">Saldo Final</th>
+        <section id="tabla-seccion" class="mt-6 sm:mt-8 hidden w-full">
+            <div class="card p-4 sm:p-6 w-full overflow-hidden">
+                <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VII. Tabla de Amortización</h3>
+                <!-- Contenedor scrollable para tablas responsive -->
+                <div class="w-full overflow-x-auto border rounded-lg scrollbar-thin scrollbar-thumb-infihuila-blue scrollbar-track-gray-100">
+                    <table id="tabla-a-exportar" class="min-w-full text-[10px] xs:text-xs sm:text-sm divide-y divide-gray-200 whitespace-nowrap">
+                        <thead class="sticky top-0 bg-infihuila-blue text-white z-10">
+                            <tr class="text-left uppercase tracking-wider">
+                                <th class="px-3 py-3 font-semibold">N.º</th>
+                                <th class="px-3 py-3 font-semibold">Fecha</th>
+                                <th class="px-3 py-3 font-semibold text-right">Cuota Total</th>
+                                <th class="px-3 py-3 font-semibold text-right">Interés</th>
+                                <th class="px-3 py-3 font-semibold text-right">Capital</th>
+                                <th class="px-3 py-3 font-semibold text-right">Saldo Final</th>
                             </tr>
                         </thead>
                         <tbody id="amortization-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- Filas -->
+                            <!-- Filas dinámicas -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- BOTÓN FLOTANTE -->
-        <div class="fixed bottom-6 right-6 z-50">
-            <button onclick="toggleHelpModal()" class="bg-infihuila-green text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 floating-btn-anim flex items-center justify-center group" title="Ayuda y Sugerencias">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- BOTÓN FLOTANTE: Posicionado con margen seguro -->
+        <div class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
+            <button onclick="toggleHelpModal()" class="bg-infihuila-green text-white p-3 sm:p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 floating-btn-anim flex items-center justify-center group focus:outline-none focus:ring-4 focus:ring-yellow-200" title="Ayuda y Sugerencias">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 text-white group-hover:rotate-12 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </button>
         </div>
 
         <!-- MODAL DE AYUDA Y SUGERENCIAS -->
-        <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0" id="help-modal-content">
+        <!-- Fondo oscurecido con backdrop-filter -->
+        <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+            <!-- Contenedor del modal: Ancho responsivo -->
+            <div class="bg-white rounded-xl shadow-2xl w-[95%] sm:w-full max-w-lg overflow-hidden transform transition-all scale-95 opacity-0 max-h-[90vh] flex flex-col" id="help-modal-content">
                 <!-- Header Modal -->
-                <div class="bg-infihuila-blue p-4 flex justify-between items-center">
-                    <h3 class="text-white font-bold text-lg flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-infihuila-blue p-4 flex justify-between items-center shrink-0">
+                    <h3 class="text-white font-bold text-base sm:text-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                         Centro de Ayuda
@@ -319,39 +330,38 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="flex border-b border-gray-200">
-                    <button onclick="switchTab('tutorial')" id="tab-tutorial" class="flex-1 py-3 text-center font-semibold text-sm bg-gray-50 text-infihuila-blue border-b-2 border-infihuila-blue transition-colors hover:bg-gray-100">
+                <div class="flex border-b border-gray-200 shrink-0">
+                    <button onclick="switchTab('tutorial')" id="tab-tutorial" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm bg-gray-50 text-infihuila-blue border-b-2 border-infihuila-blue transition-colors hover:bg-gray-100">
                         📖 Tutorial
                     </button>
-                    <button onclick="switchTab('suggestions')" id="tab-suggestions" class="flex-1 py-3 text-center font-semibold text-sm text-gray-500 hover:text-infihuila-blue transition-colors hover:bg-gray-100">
+                    <button onclick="switchTab('suggestions')" id="tab-suggestions" class="flex-1 py-3 text-center font-semibold text-xs sm:text-sm text-gray-500 hover:text-infihuila-blue transition-colors hover:bg-gray-100">
                         💡 Sugerencias
                     </button>
                 </div>
 
-                <!-- Content -->
-                <div class="p-6 h-96 overflow-y-auto">
+                <!-- Content: Scrollable -->
+                <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
                     <!-- Tutorial Content -->
                     <div id="content-tutorial" class="space-y-4">
-                        <h4 class="font-bold text-infihuila-blue text-lg">¿Cómo usar el simulador?</h4>
-                        <ol class="list-decimal list-inside space-y-3 text-sm text-gray-700">
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Datos del Cliente:</span> Diligencie obligatoriamente el nombre, identificación, teléfono y correo. Estos datos aparecerán en los reportes PDF y Excel.</li>
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Definir Monto y Plazo:</span> Ingrese el valor del crédito y el plazo en meses. Si el plazo supera los 96 meses, aparecerá una advertencia institucional.</li>
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Configuración Financiera:</span> Seleccione el tipo de amortización (Constante o Fija) y el periodo de gracia si aplica.</li>
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Tasas de Interés:</span> Elija el tipo de tasa base (DTF, IBR, TNA, EA) e ingrese su valor. Puede adicionar un Spread en puntos porcentuales.</li>
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Simular:</span> Haga clic en el botón "Simular Crédito" para generar la tabla, los gráficos y habilitar las descargas.</li>
-                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Descargas:</span> Utilice los botones superiores para descargar la proyección en Excel o el informe oficial en PDF.</li>
+                        <h4 class="font-bold text-infihuila-blue text-base sm:text-lg">¿Cómo usar el simulador?</h4>
+                        <ol class="list-decimal list-inside space-y-3 text-xs sm:text-sm text-gray-700">
+                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Datos del Cliente:</span> Diligencie nombre, identificación, teléfono y correo para los reportes.</li>
+                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Configuración:</span> Ingrese el monto y plazo. <span class="text-xs text-gray-500">(Alerta si > 96 meses)</span>.</li>
+                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Tasas:</span> Seleccione tipo de tasa y valor base. Puede añadir spread.</li>
+                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Simular:</span> Genere la tabla y gráficos con el botón inferior.</li>
+                            <li class="pl-2"><span class="font-semibold text-infihuila-green">Exportar:</span> Use los botones superiores para Excel o PDF.</li>
                         </ol>
                     </div>
 
                     <!-- Suggestions Content -->
                     <div id="content-suggestions" class="hidden space-y-4">
-                        <h4 class="font-bold text-infihuila-blue text-lg">Su opinión es importante</h4>
-                        <p class="text-sm text-gray-600">Ayúdenos a mejorar nuestra herramienta. Envíenos sus dudas, errores encontrados o sugerencias de nuevas funcionalidades.</p>
+                        <h4 class="font-bold text-infihuila-blue text-base sm:text-lg">Su opinión importa</h4>
+                        <p class="text-xs sm:text-sm text-gray-600">Envíenos dudas o reportes de errores.</p>
                         
                         <form id="suggestion-form" onsubmit="handleSuggestion(event)" class="space-y-3">
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-1">Tipo de Mensaje</label>
-                                <select class="w-full p-2 text-sm border border-gray-300 rounded focus:ring-infihuila-green focus:border-infihuila-green">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Tipo</label>
+                                <select class="w-full p-2 text-sm border border-gray-300 rounded focus:ring-infihuila-green focus:border-infihuila-green bg-white">
                                     <option>Sugerencia</option>
                                     <option>Reporte de Error</option>
                                     <option>Felicitación</option>
@@ -359,10 +369,10 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 mb-1">Comentario</label>
-                                <textarea required class="w-full p-2 text-sm border border-gray-300 rounded h-24 focus:ring-infihuila-green focus:border-infihuila-green" placeholder="Escriba aquí su comentario..."></textarea>
+                                <textarea required class="w-full p-2 text-sm border border-gray-300 rounded h-24 focus:ring-infihuila-green focus:border-infihuila-green" placeholder="Escriba aquí..."></textarea>
                             </div>
-                            <button type="submit" class="w-full bg-infihuila-green text-white font-bold py-2 rounded hover:bg-yellow-500 transition-colors shadow">
-                                Enviar Comentario
+                            <button type="submit" class="w-full bg-infihuila-green text-white font-bold py-2.5 rounded hover:bg-yellow-500 transition-colors shadow text-sm sm:text-base">
+                                Enviar
                             </button>
                         </form>
                     </div>
@@ -370,7 +380,7 @@
             </div>
         </div>
 
-        <footer class="mt-8 text-center text-[10px] sm:text-xs text-gray-500 leading-relaxed">
+        <footer class="mt-8 mb-4 text-center text-[10px] sm:text-xs text-gray-500 leading-relaxed w-full">
             © 2025 INFIHUILA - Instituto de Financiamiento, Promoción y Desarrollo del Huila<br>
             Documento controlado. Cualquier impresión es copia no controlada.
         </footer>
@@ -442,11 +452,10 @@
 
         function handleSuggestion(e) {
             e.preventDefault();
-            // Aquí iría la lógica para enviar al backend. Por ahora, simulación visual.
             const btn = e.target.querySelector('button');
             const originalText = btn.textContent;
             
-            btn.textContent = "¡Enviado con éxito!";
+            btn.textContent = "¡Enviado!";
             btn.classList.remove('bg-infihuila-green');
             btn.classList.add('bg-green-600');
             btn.disabled = true;
@@ -457,7 +466,7 @@
                 btn.classList.remove('bg-green-600');
                 btn.disabled = false;
                 e.target.reset();
-                alert("Gracias por su sugerencia. La tendremos en cuenta para futuras actualizaciones.");
+                alert("Gracias por su sugerencia.");
                 toggleHelpModal();
             }, 1500);
         }
@@ -971,7 +980,7 @@
 
             // INCREMENTAR CONSECUTIVO AL FINAL DE LA SIMULACIÓN EXITOSA
             consecutiveCounter++;
-            document.getElementById('btn-consecutivo').textContent = `Consecutivo N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`;
+            document.getElementById('btn-consecutivo').textContent = `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`;
         }
 
         function renderPieChart(capital, interes) {
@@ -1060,12 +1069,12 @@
                 const isEndOfYear = item.nCuota % MONTHS_IN_YEAR === 0 && item.nCuota !== tabla.length;
                 if (isEndOfYear) row.classList.add('border-b-4', 'border-infihuila-green', 'font-semibold');
                 row.innerHTML = `
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap">${item.nCuota}</td>
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap">${item.fecha}</td>
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right">${formatCurrency(item.cuota)}</td>
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right text-infihuila-green">${formatCurrency(item.interes)}</td>
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right text-infihuila-blue">${formatCurrency(item.capital)}</td>
-                    <td class="px-2 sm:px-3 py-2 whitespace-nowrap text-right font-medium">${formatCurrency(item.saldoFinal)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">${item.nCuota}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">${item.fecha}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-right">${formatCurrency(item.cuota)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-green">${formatCurrency(item.interes)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-blue">${formatCurrency(item.capital)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-right font-medium">${formatCurrency(item.saldoFinal)}</td>
                 `;
                 tbody.appendChild(row);
             });
