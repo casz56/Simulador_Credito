@@ -151,6 +151,19 @@
                     <input type="number" id="spread" value="0.0" min="0" max="20" step="0.1" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
                 </div>
 
+                <!-- Forma de Amortización -->
+                <div class="mb-4">
+                    <label for="frecuencia-amortizacion" class="block text-sm font-medium mb-1">Forma de amortización</label>
+                    <select id="frecuencia-amortizacion" class="w-full p-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-infihuila-green focus:border-infihuila-green">
+                        <option value="mensual" selected>Mensual</option>
+                        <option value="trimestral">Trimestral</option>
+                        <option value="semestral">Semestral</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Define cada cuánto se amortiza el capital (mensual, trimestral, semestral o anual). Los intereses se calculan mes a mes.</p>
+                </div>
+
+
                 <!-- Botón de Simulación -->
                 <button onclick="simularCredito()" class="w-full bg-infihuila-green hover:bg-infihuila-blue text-white font-semibold py-3 rounded-xl text-sm sm:text-base transition duration-300 ease-in-out shadow-md flex items-center justify-center gap-2">
                     <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-4 border-white border-t-transparent rounded-full"></span>
@@ -429,6 +442,7 @@
             const spread = parseFloat(document.getElementById('spread').value) / 100;
             const tasaBaseInput = parseFloat(document.getElementById('tasa-base-input').value);
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
+            const frecuenciaAmortizacion = document.getElementById('frecuencia-amortizacion').value;
             const tipoAmortizacion = document.getElementById('tipo-amortizacion').value; // String, no necesita isNaN
 
             // CORRECCIÓN: Se elimina el chequeo isNaN(tipoAmortizacion) ya que es un string y siempre falla la validación
@@ -500,6 +514,19 @@
             const amortizacionAnual = {};
             const fechaInicio = new Date();
 
+            // Frecuencia de amortización del capital según selección
+            let factorFrecuencia = 1;
+            if (frecuenciaAmortizacion === 'trimestral') {
+                factorFrecuencia = 3;
+            } else if (frecuenciaAmortizacion === 'semestral') {
+                factorFrecuencia = 6;
+            } else if (frecuenciaAmortizacion === 'anual') {
+                factorFrecuencia = 12;
+            } else {
+                factorFrecuencia = 1; // mensual por defecto
+            }
+
+
             // 4. Bucle de Amortización
             for (let i = 1; i <= finalPlazo; i++) {
                 // Pequeño retraso para simular carga
@@ -520,16 +547,26 @@
                     cuotaActual = interes;
                     capital = 0;
                 } else if (esPeriodoAmortizacion) {
-                    // Periodo de Amortización
-                    if (tipoAmortizacion === 'Constante') {
-                        // Capital Constante (Alemán)
-                        capital = capitalFijoAmortizacion;
-                        cuotaActual = capital + interes;
-                    } else if (tipoAmortizacion === 'Fija') {
-                        // Cuota Fija (Francés)
-                        cuotaActual = cuotaFijaConstante;
-                        capital = cuotaActual - interes;
-                        if (capital < 0) capital = 0; // Por si hay errores de redondeo o tasa alta
+                    // Periodo de Amortización con control de frecuencia de pago de capital
+                    const indiceAmortizacion = i - finalPeriodoGracia; // 1 = primer mes posterior a la gracia
+                    const esMesAmortizacionCapital = (factorFrecuencia === 1) || (indiceAmortizacion % factorFrecuencia === 0);
+
+                    if (!esMesAmortizacionCapital) {
+                        // Mes sin amortización de capital: solo se pagan intereses
+                        cuotaActual = interes;
+                        capital = 0;
+                    } else {
+                        // Mes con amortización de capital según el tipo de esquema
+                        if (tipoAmortizacion === 'Constante') {
+                            // Capital Constante (Alemán)
+                            capital = capitalFijoAmortizacion;
+                            cuotaActual = capital + interes;
+                        } else if (tipoAmortizacion === 'Fija') {
+                            // Cuota Fija (Francés)
+                            cuotaActual = cuotaFijaConstante;
+                            capital = cuotaActual - interes;
+                            if (capital < 0) capital = 0; // Por si hay errores de redondeo o tasa alta
+                        }
                     }
                 }
 
@@ -785,6 +822,7 @@
 
         function updateTasaLabels() {
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
+            const frecuenciaAmortizacion = document.getElementById('frecuencia-amortizacion').value;
             const tasaExplicacion = document.getElementById('tasa-explicacion');
 
             if (tasaReferenciaKey === 'EA') {
@@ -818,7 +856,7 @@
             }
 
             // Configurar listeners
-            document.querySelectorAll('#monto, #plazo, #spread, #tasa-base-input, #periodo-gracia, #tipo-amortizacion').forEach(input => {
+            document.querySelectorAll('#monto, #plazo, #spread, #frecuencia-amortizacion, #tasa-base-input, #periodo-gracia, #tipo-amortizacion').forEach(input => {
                 input.addEventListener('change', simularCredito);
                 input.addEventListener('keyup', (e) => {
                     if (e.key === 'Enter') simularCredito();
