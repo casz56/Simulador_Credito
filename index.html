@@ -49,7 +49,7 @@
             background-color: white;
             transition: transform 0.2s ease-in-out;
         }
-        #tabla-seccion {
+        #tabla-seccion, #trend-section {
             transition: all 0.3s ease-in-out;
         }
         /* Clase para inputs inválidos */
@@ -198,7 +198,6 @@
                                 <option value="TNA" selected>Tasa Nominal Anual (TNA)</option>
                                 <option value="EA">Tasa Efectiva Anual (E.A.)</option>
                             </select>
-                            <!-- Re-agregado el elemento faltante para la explicación de la tasa -->
                             <p id="tasa-explicacion" class="text-[10px] sm:text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
                         </div>
                         
@@ -274,11 +273,32 @@
                 </div>
             </div>
         </main>
+        
+        <!-- VII. GRÁFICO DE TENDENCIA (NUEVA SECCIÓN) -->
+        <section id="trend-section" class="mt-6 sm:mt-8 w-full max-w-7xl mx-auto hidden">
+            <div class="card p-4 sm:p-6 w-full flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                    <h3 class="text-lg sm:text-2xl font-bold text-infihuila-blue">VII. Tendencia de Distribución Mensual</h3>
+                    <!-- Control de Fechas Desplegable -->
+                    <div class="flex items-center gap-2">
+                        <label for="trend-year-filter" class="text-xs sm:text-sm font-semibold text-gray-600">Filtrar por Año:</label>
+                        <select id="trend-year-filter" onchange="filterTrendChart()" class="p-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white shadow-sm cursor-pointer outline-none">
+                            <option value="all">Todos los años</option>
+                            <!-- Opciones dinámicas -->
+                        </select>
+                    </div>
+                </div>
+                <div class="relative w-full h-64 sm:h-80 md:h-96 lg:h-[400px]">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <p class="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">Gráfico: Porcentaje de la cuota mensual destinado a capital vs. intereses.</p>
+            </div>
+        </section>
 
-        <!-- VII. Tabla de Amortización -->
+        <!-- VIII. Tabla de Amortización (RENUMERADA) -->
         <section id="tabla-seccion" class="mt-6 sm:mt-8 hidden w-full">
             <div class="card p-4 sm:p-6 w-full overflow-hidden">
-                <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VII. Tabla de Amortización</h3>
+                <h3 class="text-lg sm:text-2xl font-bold mb-4 text-infihuila-blue">VIII. Tabla de Amortización</h3>
                 <!-- Contenedor scrollable para tablas responsive -->
                 <div class="w-full overflow-x-auto border rounded-lg scrollbar-thin scrollbar-thumb-infihuila-blue scrollbar-track-gray-100">
                     <table id="tabla-a-exportar" class="min-w-full text-[10px] xs:text-xs sm:text-sm divide-y divide-gray-200 whitespace-nowrap">
@@ -391,10 +411,12 @@
         // Inicialización de variables
         let pieChartInstance = null;
         let barChartInstance = null;
+        let trendChartInstance = null; // Nueva instancia para el gráfico de tendencias
         const MONTHS_IN_YEAR = 12;
         let lastAmortizationTableData = []; 
         let clientData = {}; // Objeto para almacenar datos del cliente
         let consecutiveCounter = 1; // Contador para el consecutivo
+        let fullTrendData = []; // Datos completos para el gráfico de tendencias
         
         // --- FUNCIONES INTERFAZ DE AYUDA ---
         function toggleHelpModal() {
@@ -524,16 +546,12 @@
 
             // Ocultar sección de tabla
             document.getElementById('tabla-seccion').classList.add('hidden');
+            document.getElementById('trend-section').classList.add('hidden'); // Ocultar gráfico de tendencias
 
             // Limpiar Gráficos
-            if (pieChartInstance) {
-                pieChartInstance.destroy();
-                pieChartInstance = null;
-            }
-            if (barChartInstance) {
-                barChartInstance.destroy();
-                barChartInstance = null;
-            }
+            if (pieChartInstance) { pieChartInstance.destroy(); pieChartInstance = null; }
+            if (barChartInstance) { barChartInstance.destroy(); barChartInstance = null; }
+            if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
 
             // Deshabilitar botones de descarga
             document.getElementById('download-excel-btn').disabled = true;
@@ -541,6 +559,7 @@
 
             // Resetear variables internas
             lastAmortizationTableData = [];
+            fullTrendData = [];
             clientData = {};
 
             // Opcional: Update Labels para que coincidan con la Tasa Default
@@ -788,6 +807,7 @@
             excelBtn.disabled = true;
             pdfBtn.disabled = true;
             document.getElementById('tabla-seccion').classList.add('hidden');
+            document.getElementById('trend-section').classList.add('hidden');
 
             // 1. Obtención y validación de Inputs Financieros
             let monto = parseFloat(document.getElementById('monto').value);
@@ -869,6 +889,9 @@
             const amortizacionAnual = {};
             const fechaInicio = new Date();
 
+            // Variables para tendencia
+            fullTrendData = [];
+
             let factorFrecuencia = 1;
             if (frecuenciaAmortizacion === 'trimestral') factorFrecuencia = 3;
             else if (frecuenciaAmortizacion === 'semestral') factorFrecuencia = 6;
@@ -933,6 +956,22 @@
                     interes: interesRounded, capital: capitalRounded, saldoFinal: saldoFinalRounded
                 });
 
+                // Lógica de datos de tendencia (Manejo de % para evitar división por cero en cuotas 0)
+                let pctCapital = 0;
+                let pctInteres = 0;
+                if (cuotaActual > 0) {
+                    pctCapital = (capital / cuotaActual) * 100;
+                    pctInteres = (interes / cuotaActual) * 100;
+                }
+                
+                fullTrendData.push({
+                    fecha: fechaFormateada,
+                    year: fechaCuota.getFullYear(),
+                    pctCapital: pctCapital,
+                    pctInteres: pctInteres,
+                    rawDate: fechaCuota // Guardamos fecha objeto para ordenar si es necesario
+                });
+
                 const year = fechaCuota.getFullYear();
                 if (!amortizacionAnual[year]) amortizacionAnual[year] = { capital: 0, interes: 0 };
                 amortizacionAnual[year].capital += capitalRounded;
@@ -942,6 +981,10 @@
             lastAmortizationTableData = tablaAmortizacion;
             renderPieChart(totalCapital, totalInteres);
             renderBarChart(amortizacionAnual);
+            
+            // Lógica para el nuevo gráfico de tendencia
+            populateYearFilter(fullTrendData);
+            filterTrendChart(); // Renderiza con "Todos" por defecto
             
             const cuotaMostrar = tipoAmortizacion === 'Fija' ? cuotaFijaConstante : capitalFijoAmortizacion + interesPrimeraAmortizacion;
             document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaMostrar));
@@ -972,6 +1015,7 @@
 
             renderAmortizationTable(tablaAmortizacion);
             document.getElementById('tabla-seccion').classList.remove('hidden');
+            document.getElementById('trend-section').classList.remove('hidden');
 
             spinner.classList.add('hidden');
             button.disabled = false;
@@ -981,6 +1025,99 @@
             // INCREMENTAR CONSECUTIVO AL FINAL DE LA SIMULACIÓN EXITOSA
             consecutiveCounter++;
             document.getElementById('btn-consecutivo').textContent = `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`;
+        }
+
+        function populateYearFilter(data) {
+            const select = document.getElementById('trend-year-filter');
+            // Mantener solo la primera opción "Todos los años"
+            select.innerHTML = '<option value="all">Todos los años</option>';
+            
+            const years = [...new Set(data.map(item => item.year))];
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                select.appendChild(option);
+            });
+        }
+
+        function filterTrendChart() {
+            const selectedYear = document.getElementById('trend-year-filter').value;
+            let filteredData = fullTrendData;
+
+            if (selectedYear !== 'all') {
+                filteredData = fullTrendData.filter(item => item.year == selectedYear);
+            }
+
+            const labels = filteredData.map(item => item.fecha);
+            const dataCapital = filteredData.map(item => item.pctCapital);
+            const dataInteres = filteredData.map(item => item.pctInteres);
+
+            renderTrendChart(labels, dataCapital, dataInteres);
+        }
+
+        function renderTrendChart(labels, dataCapital, dataInteres) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChartInstance) trendChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '% Capital Mensual',
+                            data: dataCapital,
+                            borderColor: '#006C72', // Infihuila Blue
+                            backgroundColor: 'rgba(0, 108, 114, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '% Interés Mensual',
+                            data: dataInteres,
+                            borderColor: '#CCD400', // Infihuila Green
+                            backgroundColor: 'rgba(204, 212, 0, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: { display: true, text: 'Porcentaje (%)' }
+                        },
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 12 // Evitar saturación en eje X
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function renderPieChart(capital, interes) {
