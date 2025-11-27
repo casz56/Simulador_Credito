@@ -80,11 +80,16 @@
         <header class="w-full mb-4 sm:mb-6 p-4 sm:p-5 lg:p-6 bg-white text-infihuila-green rounded-xl shadow-lg border-t-4 border-infihuila-green">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
                 <div class="w-full md:w-auto flex justify-center md:justify-start">
-                    <!-- REFERENCIA AL NUEVO LOGO -->
-                    <img src="Logo_Infi.png" 
-                         alt="Logo INFIHUILA" 
-                         class="h-12 xs:h-14 sm:h-16 w-auto object-contain transition-all duration-300"
-                         onerror="this.onerror=null;this.src='https://placehold.co/140x64/006C72/FFFFFF?text=Logo+INFIHUILA';">
+                    <!-- LOGO INSTITUCIONAL (Reemplazado con SVG estilizado) -->
+                    <!-- TAMAÑO AJUSTADO A 80PX -->
+                    <div class="flex items-center justify-center flex-shrink-0" style="height: 80px; width: auto;">
+                        <svg viewBox="0 0 240 80" style="height: 100%; width: auto;" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                            <text x="10" y="55" font-family="Tw Cen MT, sans-serif" font-size="48" font-weight="900" letter-spacing="-2">
+                                <tspan fill="#CCD400">Infi</tspan>
+                                <tspan fill="#006C72" dx="-2">Huila</tspan>
+                            </text>
+                        </svg>
+                    </div>
                 </div>
                 <div class="flex-1 text-center w-full">
                     <h1 class="text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-extrabold text-infihuila-green leading-tight break-words">
@@ -154,12 +159,20 @@
                     <div class="space-y-3 sm:space-y-4">
                         <div>
                             <label for="monto" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Monto del Crédito ($)</label>
-                            <input type="number" id="monto" value="6000000000" min="100000" step="100000" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                            <!-- CAMBIO CRUCIAL: type="number" a type="text" para permitir puntos de formato -->
+                            <!-- Se añade el listener oninput para formatear y onchange para simular -->
+                            <input type="text" 
+                                   id="monto" 
+                                   value="13.200.000.000" 
+                                   pattern="[0-9.,]*"
+                                   oninput="formatInputCurrency(this)" 
+                                   class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
                         </div>
 
                         <div>
                             <label for="plazo" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Plazo (Meses)</label>
-                            <input type="number" id="plazo" value="60" min="12" max="360" step="1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
+                            <!-- Plazo ajustado a 96 meses -->
+                            <input type="number" id="plazo" value="96" min="12" max="360" step="1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
                             <p id="plazo-warning" class="hidden text-[10px] sm:text-xs text-infihuila-blue font-bold mt-2 bg-teal-50 p-2 rounded border border-infihuila-blue animate-pulse">
                                 ⚠️ Plazo > 96 meses: Requiere aprobación del consejo directivo.
                             </p>
@@ -168,8 +181,10 @@
                         <div>
                             <label for="tipo-amortizacion" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tipo de Amortización</label>
                             <select id="tipo-amortizacion" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
-                                <option value="Constante" selected>Capital Constante (Alemán)</option>
-                                <option value="Fija">Cuota Fija (Francés)</option>
+                                <!-- CAMBIO DE NOMBRE: Alemán a Créditos Empresariales -->
+                                <option value="Constante" selected>Créditos Empresariales</option> 
+                                <!-- CAMBIO DE NOMBRE: Francés a Créditos Persona Natural -->
+                                <option value="Fija">Créditos Persona Natural</option> 
                             </select>
                         </div>
                         
@@ -185,16 +200,18 @@
                             <select id="tasa-referencia" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green bg-white">
                                 <option value="DTF">DTF</option>
                                 <option value="IBR">IBR</option>
-                                <option value="TNA" selected>Tasa Nominal Anual (TNA)</option>
-                                <option value="EA">Tasa Efectiva Anual (E.A.)</option>
+                                <option value="TNA">Tasa Nominal Anual (TNA)</option>
+                                <!-- Se usa EA para demostrar la tasa de 1% TEM (12.6825% EA) -->
+                                <option value="EA" selected>Tasa Efectiva Anual (E.A.)</option> 
                             </select>
-                            <p id="tasa-explicacion" class="text-[10px] sm:text-xs text-gray-500 mt-1">TNM = TNA / 12 (Cálculo Nominal).</p>
+                            <p id="tasa-explicacion" class="text-[10px] sm:text-xs text-gray-500 mt-1">TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).</p>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label for="tasa-base-input" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Tasa Base (%)</label> 
-                                <input type="number" id="tasa-base-input" value="11.15" min="0" max="100" step="0.0001" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green">
+                                <!-- Tasa ajustada para simular el interés de 1.00% TEM -->
+                                <input type="number" id="tasa-base-input" value="12.6825" min="0" max="100" step="0.0001" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green">
                             </div>
                             <div>
                                 <label for="spread" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Spread (Pts)</label>
@@ -224,12 +241,17 @@
                         <div class="space-y-2 text-xs sm:text-sm">
                             <p class="flex justify-between items-center"><span class="font-medium text-gray-600" id="label-cuota-fija">1. Cuota Inicial:</span> <span id="detalle-cuota" class="text-base sm:text-lg font-extrabold text-infihuila-blue">---</span></p>
                             <hr class="border-gray-100">
-                            <p id="row-capital-fijo" class="flex justify-between items-center"><span class="font-medium text-gray-600">2. Capital Fijo:</span> <span id="detalle-capital-fijo" class="font-semibold text-gray-800">---</span></p>
-                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">3. Interés Inicial:</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
+                            <!-- ETIQUETA: Capital Estimado -->
+                            <p id="row-capital-fijo" class="flex justify-between items-center"><span class="font-medium text-gray-600">2. Capital Estimado:</span> <span id="detalle-capital-fijo" class="font-semibold text-gray-800">---</span></p>
+                            <!-- ETIQUETA: Interés Estimado -->
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">3. Interés Estimado:</span> <span id="detalle-interes-inicial" class="font-semibold text-infihuila-green">---</span></p>
                             <hr class="border-gray-100">
-                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">4. Tasa Mensual:</span> <span id="detalle-tasa-mensual" class="font-bold text-gray-800">---</span></p>
-                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">5. Tasa Final (E.A):</span> <span id="detalle-tasa-efectiva" class="font-bold text-gray-800">---</span></p>
-                            <p id="row-tasa-nominal" class="flex justify-between items-center"><span class="font-medium text-gray-600">6. Tasa Nominal (TNA):</span> <span id="detalle-tasa-nominal" class="font-bold text-gray-800">---</span></p>
+                            <!-- CAMBIO DE ETIQUETA: Tasa Mensual -> Tasa Mensual Estimada -->
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">4. Tasa Mensual Estimada:</span> <span id="detalle-tasa-mensual" class="font-bold text-gray-800">---</span></p>
+                            <!-- CAMBIO DE ETIQUETA: Tasa Final (E.A) -> Tasa Final Estimada (E.A) -->
+                            <p class="flex justify-between items-center"><span class="font-medium text-gray-600">5. Tasa Final Estimada (E.A):</span> <span id="detalle-tasa-efectiva" class="font-bold text-gray-800">---</span></p>
+                            <!-- CAMBIO DE ETIQUETA: Tasa Nominal (TNA) -> Tasa Nominal Estimada (TNA) -->
+                            <p id="row-tasa-nominal" class="flex justify-between items-center"><span class="font-medium text-gray-600">6. Tasa Nominal Estimada (TNA):</span> <span id="detalle-tasa-nominal" class="font-bold text-gray-800">---</span></p>
                         </div>
                         <div class="mt-4 pt-3 border-t-2 border-dashed border-gray-200 space-y-2 text-xs sm:text-sm bg-gray-50 p-2 rounded-lg">
                              <h4 class="text-sm sm:text-base font-bold mb-1 text-infihuila-blue">IV. Totales Estimados</h4>
@@ -438,7 +460,6 @@
                 btn.classList.add('bg-infihuila-green');
                 btn.classList.remove('bg-green-600');
                 btn.disabled = false;
-                e.target.reset();
                 alert("Gracias por su sugerencia.");
                 toggleHelpModal();
             }, 1500);
@@ -449,6 +470,39 @@
             const potencia = Math.pow(1 + i, n);
             return P * (i * potencia) / (potencia - 1);
         }
+        
+        // Función para calcular la Tasa Efectiva Mensual (TEM) a partir de una Tasa Nominal Anual (TNA)
+        function nominalToEffectiveMonthly(TNA) {
+            return TNA / MONTHS_IN_YEAR;
+        }
+
+        // Función para calcular la Tasa Efectiva Anual (TEA) a partir de una Tasa Efectiva Mensual (TEM)
+        function effectiveMonthlyToEffectiveAnnual(TEM) {
+            return Math.pow(1 + TEM, MONTHS_IN_YEAR) - 1;
+        }
+
+        // FUNCIÓN: Formatea el input de monto con puntos de separación de miles
+        function formatInputCurrency(input) {
+            // 1. Obtener el valor, remover puntos de miles y comas decimales (si se usaran)
+            let value = input.value.replace(/\./g, '').replace(/,/g, '');
+            
+            // 2. Asegurarse de que el valor sea un número limpio
+            const num = parseFloat(value);
+            if (isNaN(num)) {
+                input.value = '';
+                return;
+            }
+
+            // 3. Formatear el número con puntos como separador de miles
+            const formatter = new Intl.NumberFormat('es-CO', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            });
+            
+            input.value = formatter.format(num);
+        }
+
 
         function restablecerFormulario() {
             document.getElementById('nombre-cliente').value = '';
@@ -463,13 +517,20 @@
             ];
             inputsCliente.forEach(input => input.classList.remove('input-error'));
             document.getElementById('error-cliente').classList.add('hidden');
-            document.getElementById('monto').value = "6000000000";
-            document.getElementById('plazo').value = "60";
+            
+            // Valores por defecto ajustados para la simulación de 13.2B/96M
+            // Llamamos a formatInputCurrency para formatear el valor numérico con puntos
+            const montoInput = document.getElementById('monto');
+            montoInput.value = "13200000000"; 
+            formatInputCurrency(montoInput); 
+            
+            document.getElementById('plazo').value = "96";
             document.getElementById('tipo-amortizacion').value = "Constante";
             document.getElementById('periodo-gracia').value = "12";
-            document.getElementById('tasa-referencia').value = "TNA";
-            document.getElementById('tasa-base-input').value = "11.15";
+            document.getElementById('tasa-referencia').value = "EA";
+            document.getElementById('tasa-base-input').value = "12.6825"; // Approx 1% TEM
             document.getElementById('spread').value = "0.0";
+            
             document.getElementById('frecuencia-amortizacion').value = "mensual";
             document.getElementById('plazo-warning').classList.add('hidden');
             document.getElementById('detalle-cuota').textContent = "---";
@@ -496,6 +557,7 @@
             lastAmortizationTableData = [];
             fullTrendData = [];
             clientData = {};
+            updateTasaOptions(); // Llamar a la función de ajuste de opciones de tasa
             updateTasaLabels();
         }
 
@@ -509,24 +571,99 @@
 
         function exportToExcel() {
             if (lastAmortizationTableData.length === 0) return;
+            
+            const today = new Date();
+            const dateTime = today.toLocaleDateString('es-CO', { 
+                year: 'numeric', month: 'numeric', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+            });
+
             const infoCliente = [
+                // Fila 1: Título
                 ['SIMULADOR DE CRÉDITO INFIHUILA'],
-                ['Consecutivo:', `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`],
-                ['Fecha Simulación:', new Date().toLocaleDateString()],
-                ['Cliente:', clientData.nombre],
-                ['Identificación:', clientData.id],
-                ['Teléfono:', clientData.telefono],
-                ['Email:', clientData.email],
+                // Fila 2: Espacio
                 [''],
+                // Fila 3: Consecutivo
+                ['Consecutivo:', `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`],
+                // Fila 4: Fecha y Hora de Simulación (Columna B)
+                ['Fecha Simulación:', dateTime],
+                // Fila 5: Cliente
+                ['Cliente:', clientData.nombre],
+                // Fila 6: Identificación
+                ['Identificación:', clientData.id],
+                // Fila 7: Teléfono
+                ['Teléfono:', clientData.telefono],
+                // Fila 8: Email
+                ['Email:', clientData.email],
+                // Fila 9: Espacio
+                [''],
+                // Fila 10: Título de Tabla
                 ['TABLA DE AMORTIZACIÓN']
             ];
+            
             const headers = ['N.º Cuota', 'Fecha (Est.)', 'Cuota Total', 'Interés', 'Capital', 'Saldo Final'];
+            
+            // Los datos se exportan como números para que Excel los reconozca y pueda aplicar el formato
             const data = lastAmortizationTableData.map(item => [
                 item.nCuota, item.fecha, item.cuota, item.interes, item.capital, item.saldoFinal
             ]);
+            
             const ws = XLSX.utils.aoa_to_sheet([...infoCliente, headers, ...data]);
+            
+            // --- APLICAR FORMATO DE MONEDA Y ANCHO DE COLUMNAS ---
+            const initialRowsOffset = infoCliente.length;
+            const currencyCols = ['C', 'D', 'E', 'F']; 
+            const numberFormat = '"$"#,##0'; // Formato de moneda para COP (sin decimales)
+
+            // Aplicar formato a las columnas de dinero (C, D, E, F)
+            for (let R = initialRowsOffset + 1; R < initialRowsOffset + 1 + data.length; ++R) {
+                currencyCols.forEach(col => {
+                    const cellRef = col + R;
+                    if (ws[cellRef]) {
+                        ws[cellRef].z = numberFormat;
+                    }
+                });
+            }
+
+            // Ajustar ancho de columnas para mejor visualización
+            ws['!cols'] = [
+                { wch: 10 }, // A: N.º Cuota
+                { wch: 15 }, // B: Fecha (Est.)
+                { wch: 18 }, // C: Cuota Total (Moneda)
+                { wch: 18 }, // D: Interés (Moneda)
+                { wch: 18 }, // E: Capital (Moneda)
+                { wch: 20 }  // F: Saldo Final (Moneda)
+            ];
+
+            // --- CONFIGURACIÓN DE IMPRESIÓN (A4 VERTICAL Y ENCABEZADO) ---
+            if (!ws['!page_setup']) {
+                ws['!page_setup'] = {};
+            }
+            
+            // Formato A4 Vertical
+            ws['!page_setup'].paperSize = 9; // A4
+            ws['!page_setup'].orientation = 'portrait'; // Vertical
+
+            // Margenes de impresión (en pulgadas - aprox 2.54cm)
+            ws['!page_setup'].top = 0.75;    // 1.9 cm
+            ws['!page_setup'].bottom = 0.75; // 1.9 cm
+            ws['!page_setup'].left = 0.7;    // 1.78 cm
+            ws['!page_setup'].right = 0.7;   // 1.78 cm
+            
+            // Establecer área de impresión para incluir encabezado y tabla
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            ws['!page_setup'].printArea = XLSX.utils.encode_range(range);
+
+            // Título de impresión y fecha en el encabezado
+            ws['!page_setup'].printOptions = {
+                // Configuración de encabezado y pie de página: Logo a la Izquierda, Título al Centro, Fecha a la Derecha
+                header: '&L&"Tw Cen MT,Bold,Color(006C72)"Infi&"Tw Cen MT,Bold,Color(CCD400)"Huila&C&"Tw Cen MT,Bold"SIMULADOR CRÉDITO INFIHUILA&R&"Tw Cen MT,Regular"Fecha: ' + today.toLocaleDateString() + ' - Hora: ' + today.toLocaleTimeString(),
+                footer: '&LCliente: ' + clientData.nombre + ' &C&P de &N&RGenerado por Simulador Oficial'
+            };
+
+
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Simulacion");
+            XLSX.utils.book_append_sheet(wb, ws, "Amortizacion");
             XLSX.writeFile(wb, "Simulacion_Credito_INFIHUILA.xlsx");
         }
 
@@ -543,9 +680,19 @@
                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
             });
 
+            // --- CABECERA GRANDE (Primera Página) ---
             doc.setFillColor(0, 108, 114); 
             doc.rect(0, 0, PAGE_WIDTH, 40, 'F');
             
+            // 1. Logo (InfiHuila Texto Estilizado - Superior Izquierda)
+            doc.setFont("Tw Cen MT", "bold");
+            doc.setFontSize(18);
+            doc.setTextColor(204, 212, 0); // infihuila-green (Infi)
+            doc.text("Infi", MARGIN_LEFT, 20);
+            doc.setTextColor(0, 108, 114); // infihuila-blue (Huila)
+            doc.text("Huila", MARGIN_LEFT + doc.getStringUnitWidth("Infi") * 18 / doc.internal.scaleFactor, 20);
+
+            // 2. Título Principal
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
             doc.setFont("helvetica", "bold");
@@ -553,6 +700,12 @@
             doc.setFontSize(14);
             doc.setFont("helvetica", "normal");
             doc.text("INFIHUILA", PAGE_WIDTH / 2, 30, { align: 'center' });
+
+            // 3. Fecha/Hora (Superior Derecha)
+            doc.setTextColor(255, 255, 255); 
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${dateTime}`, PAGE_WIDTH - MARGIN_RIGHT, 10, { align: 'right' });
+
 
             let yPos = 60;
             doc.setTextColor(0, 108, 114);
@@ -588,7 +741,9 @@
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(11);
             
-            const monto = document.getElementById('monto').value;
+            // OBTENER DETALLES DEL CRÉDITO (sin puntos)
+            const montoRaw = document.getElementById('monto').value.replace(/\./g, '').replace(/,/g, '');
+            const monto = parseFloat(montoRaw);
             const plazo = document.getElementById('plazo').value;
             const tasaNom = document.getElementById('detalle-tasa-nominal').textContent;
             const tasaMes = document.getElementById('detalle-tasa-mensual').textContent;
@@ -613,23 +768,38 @@
             doc.setFontSize(9);
             doc.setTextColor(100);
             doc.text("Generado por Simulador Oficial INFIHUILA", PAGE_WIDTH/2, PAGE_HEIGHT - 20, { align: 'center' });
-            doc.text(`Fecha: ${dateTime}`, PAGE_WIDTH/2, PAGE_HEIGHT - 15, { align: 'center' });
+            doc.text(`Fecha y Hora: ${dateTime}`, PAGE_WIDTH/2, PAGE_HEIGHT - 15, { align: 'center' });
 
             doc.addPage();
 
             const addInternalHeader = (doc) => {
+                const HEADER_Y = 10;
                 doc.setFillColor(0, 108, 114); 
                 doc.rect(0, 0, PAGE_WIDTH, 15, 'F');
                 doc.setTextColor(255, 255, 255);
                 doc.setFontSize(10);
-                doc.text("ANEXO: TABLA DE AMORTIZACIÓN", MARGIN_LEFT, 10);
-                doc.text(`Cliente: ${clientData.nombre}`, PAGE_WIDTH - MARGIN_RIGHT, 10, { align: 'right' });
+                
+                // Logo (Superior Izquierda)
+                doc.setFont("Tw Cen MT", "bold");
+                doc.setTextColor(204, 212, 0); // infihuila-green (Infi)
+                doc.text("Infi", MARGIN_LEFT, HEADER_Y);
+                doc.setTextColor(0, 108, 114); // infihuila-blue (Huila)
+                doc.text("Huila", MARGIN_LEFT + doc.getStringUnitWidth("Infi") * 10 / doc.internal.scaleFactor, HEADER_Y); // Ajuste de tamaño de fuente a 10
+                
+                // Título de Anexo (Centro)
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.text("ANEXO: TABLA DE AMORTIZACIÓN", PAGE_WIDTH / 2, HEADER_Y, { align: 'center' });
+
+                // Fecha/Hora (Superior Derecha)
+                doc.setFont("helvetica", "normal");
+                doc.text(`Fecha y Hora: ${dateTime}`, PAGE_WIDTH - MARGIN_RIGHT, HEADER_Y, { align: 'right' });
             };
 
             const addFooter = (doc, pageNumber, totalPages) => {
                 doc.setFontSize(8);
                 doc.setTextColor(100);
-                doc.text(`Fecha: ${dateTime}`, MARGIN_LEFT, PAGE_HEIGHT - 10);
+                doc.text(`Cliente: ${clientData.nombre}`, MARGIN_LEFT, PAGE_HEIGHT - 10);
                 const pageText = `Página ${pageNumber} de ${totalPages}`;
                 const textWidth = doc.getStringUnitWidth(pageText) * doc.internal.getFontSize() / doc.internal.scaleFactor;
                 doc.text(pageText, PAGE_WIDTH - MARGIN_RIGHT - textWidth, PAGE_HEIGHT - 10);
@@ -653,18 +823,17 @@
                 styles: { fontSize: 7, cellPadding: 1 },
                 columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
                 didDrawPage: (data) => {
-                    if (data.pageNumber > 2) addInternalHeader(doc); 
+                    // Reaplicar el encabezado interno en cada página (excepto la primera)
+                    if (data.pageNumber > 1) {
+                        doc.setPage(data.pageNumber);
+                        addInternalHeader(doc); 
+                    }
                     addFooter(doc, data.pageNumber, doc.internal.pages.length - 1); 
                 }
             });
 
-            const totalPages = doc.internal.pages.length - 1;
-            for (let i = 1; i <= totalPages; i++) {
-                doc.setPage(i);
-                if (i > 1) {
-                   addFooter(doc, i, totalPages);
-                }
-            }
+            // Ajustar el número total de páginas en el footer (la línea anterior ya hace este ajuste)
+            
             doc.save(`Simulacion_${clientData.id}.pdf`);
         }
 
@@ -710,11 +879,13 @@
             document.getElementById('tabla-seccion').classList.add('hidden');
             document.getElementById('trend-section-container').classList.add('hidden');
 
-            let monto = parseFloat(document.getElementById('monto').value);
+            // OBTENER VALOR NUMÉRICO: Eliminar puntos antes de parsear
+            let monto = parseFloat(document.getElementById('monto').value.replace(/\./g, '').replace(/,/g, ''));
+            
             let plazo = parseInt(document.getElementById('plazo').value);
             let spreadInput = document.getElementById('spread').value;
             let spread = spreadInput === '' ? 0 : parseFloat(spreadInput);
-            spread = spread / 100;
+            spread = spread / 100; // Convertir spread de puntos a decimal
 
             let tasaBaseVal = document.getElementById('tasa-base-input').value;
             let tasaBaseInput = tasaBaseVal === '' ? 0 : parseFloat(tasaBaseVal);
@@ -734,6 +905,17 @@
                 return;
             }
             
+            // --- VALIDACIÓN DE REGLAS DE NEGOCIO (FRANCÉS vs. TASAS) ---
+            if (tipoAmortizacion === 'Fija' && (tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR')) {
+                // Esta es la validación que asegura que el Francés solo use tasas fijas (EA/TNA)
+                console.error('Error de validación: Cuota Fija (Francés) solo permite Tasa Efectiva Anual (E.A.) o Tasa Nominal Anual (TNA).');
+                // Se restablece la tasa a EA (la opción por defecto permitida)
+                document.getElementById('tasa-referencia').value = 'EA';
+                updateTasaLabels(); // Esto llamará a simularCredito() de nuevo con la tasa correcta
+                return; 
+            }
+            // -------------------------------------------------------------
+            
             if (isNaN(spread)) spread = 0;
             if (isNaN(tasaBaseInput) || tasaBaseInput < 0) tasaBaseInput = 0;
             
@@ -742,43 +924,66 @@
             if (finalPeriodoGracia >= finalPlazo) {
                 finalPeriodoGracia = 0;
             }
-
+            
+            // --- CÁLCULO DE TASAS INICIALES Y CONVERSIÓN A TEM (Tasa Efectiva Mensual) ---
             const tasaBase = tasaBaseInput / 100;
             const tasaAnualTotal = tasaBase + spread;
-            let tasaMensual = 0;
-            let tasaEfectivaAnual = 0;
-            let tasaNominalAnual = 0;
+            let tasaMensual = 0; // Tasa Efectiva Mensual (TEM)
 
-            if (tasaReferenciaKey === 'EA') {
-                tasaEfectivaAnual = tasaAnualTotal;
+            if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
+                // Si la base es EA (o DTF/IBR, que se asumen como EA en el contexto de tasas), se usa la fórmula efectiva
                 tasaMensual = Math.pow(1 + tasaAnualTotal, 1 / MONTHS_IN_YEAR) - 1;
-                tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
-            } else {
-                tasaNominalAnual = tasaAnualTotal;
-                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR; 
-                tasaEfectivaAnual = Math.pow(1 + tasaMensual, MONTHS_IN_YEAR) - 1;
+            } else { // TNA
+                // Si la base es TNA, se usa la fórmula nominal para TEM
+                tasaMensual = nominalToEffectiveMonthly(tasaAnualTotal);
             }
+            
+            // Recálculo de las tasas anuales para mostrar los detalles correctamente
+            const tasaEfectivaAnual = effectiveMonthlyToEffectiveAnnual(tasaMensual);
+            const tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
+            // ----------------------------------------------------------------------------
             
             const plazoAmortizacion = finalPlazo - finalPeriodoGracia;
-            let capitalFijoAmortizacion = 0;
-            let cuotaFijaConstante = 0;
-            let interesPrimeraAmortizacion = 0;
             
-            if (plazoAmortizacion > 0) {
-                interesPrimeraAmortizacion = monto * tasaMensual;
-                if (tipoAmortizacion === 'Constante') { 
-                    capitalFijoAmortizacion = monto / plazoAmortizacion; 
-                    cuotaFijaConstante = capitalFijoAmortizacion + interesPrimeraAmortizacion; 
-                } else if (tipoAmortizacion === 'Fija') { 
-                    capitalFijoAmortizacion = 0;
-                    cuotaFijaConstante = calcularCuotaFija(monto, tasaMensual, plazoAmortizacion);
-                }
-            } else {
-                cuotaFijaConstante = monto * tasaMensual;
-                capitalFijoAmortizacion = 0;
-                interesPrimeraAmortizacion = monto * tasaMensual;
-            }
+            // Determinar el factor de frecuencia
+            let factorFrecuencia = 1;
+            if (frecuenciaAmortizacion === 'trimestral') factorFrecuencia = 3;
+            else if (frecuenciaAmortizacion === 'semestral') factorFrecuencia = 6;
+            else if (frecuenciaAmortizacion === 'anual') factorFrecuencia = 12;
+            
+            // Calcular el número real de cuotas de capital a pagar en el periodo de amortización
+            const numCuotasCapital = Math.ceil(plazoAmortizacion / factorFrecuencia);
 
+            let capitalFijo = 0;
+            let cuotaFijaRecalculada = 0;
+            
+            if (plazoAmortizacion > 0 && numCuotasCapital > 0) {
+                if (tipoAmortizacion === 'Constante') { 
+                    // Sistema Alemán (Capital Constante): Capital Fijo dividido entre el número REAL de pagos de capital
+                    capitalFijo = monto / numCuotasCapital; 
+                    // Cuota de referencia (solo para la primera cuota después de gracia)
+                    cuotaFijaRecalculada = capitalFijo + (monto * tasaMensual); 
+                } else if (tipoAmortizacion === 'Fija') { 
+                    // Sistema Francés (Cuota Fija): La amortización se calcula en base al número de PAGOS REALES.
+                    capitalFijo = 0; 
+                    
+                    // La tasa debe ser la efectiva del periodo de amortización
+                    const tasaPeriodo = Math.pow(1 + tasaMensual, factorFrecuencia) - 1;
+                    
+                    // Número de periodos de amortización (No meses, sino pagos de capital)
+                    const N_pagos = numCuotasCapital; 
+                    
+                    if (tasaPeriodo > 0) {
+                        // Calcular la Cuota Total FIJA del PERIODO (ej. trimestral)
+                        cuotaFijaRecalculada = calcularCuotaFija(monto, tasaPeriodo, N_pagos);
+                    } else {
+                        cuotaFijaRecalculada = monto / N_pagos; 
+                    }
+                }
+            }
+            
+            const interesPrimeraAmortizacion = monto * tasaMensual;
+            
             let saldoPendiente = monto;
             let totalInteres = 0;
             let totalCapital = 0;
@@ -788,11 +993,9 @@
             const fechaInicio = new Date();
 
             fullTrendData = [];
-
-            let factorFrecuencia = 1;
-            if (frecuenciaAmortizacion === 'trimestral') factorFrecuencia = 3;
-            else if (frecuenciaAmortizacion === 'semestral') factorFrecuencia = 6;
-            else if (frecuenciaAmortizacion === 'anual') factorFrecuencia = 12;
+            
+            // Variable para acumular interés en los meses intermedios (solo para Francés multifrecuencia)
+            let interesAcumuladoPeriodo = 0;
 
             for (let i = 1; i <= finalPlazo; i++) {
                 await new Promise(r => setTimeout(r, 0)); 
@@ -800,52 +1003,84 @@
                 const fechaCuota = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + i, fechaInicio.getDate());
                 const fechaFormateada = fechaCuota.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
 
+                // --- CÁLCULO DE INTERÉS (APLICA A AMBOS SISTEMAS) ---
+                // El interés se calcula siempre sobre el saldo pendiente, usando la TEM.
+                // Esta es la lógica estándar de "interés sobre saldos" de sus archivos de referencia.
                 const interes = saldoPendiente * tasaMensual;
+                
                 let cuotaActual = 0;
                 let capital = 0;
 
                 const esPeriodoGracia = i <= finalPeriodoGracia;
-                const esPeriodoAmortizacion = i > finalPeriodoGracia;
-
+                const i_amortizacion = i - finalPeriodoGracia;
+                const esPeriodoAmortizacion = i_amortizacion > 0;
+                
+                // Determina si es un mes de pago de capital (ignora periodo de gracia)
+                const esMesAmortizacionCapital = esPeriodoAmortizacion && (i_amortizacion % factorFrecuencia === 0);
+                const esMesIntermedio = esPeriodoAmortizacion && !esMesAmortizacionCapital;
+                
                 if (esPeriodoGracia) {
+                    // Periodo de Gracia: Solo se pagan intereses
                     cuotaActual = interes;
                     capital = 0;
                 } else if (esPeriodoAmortizacion) {
-                    const indiceAmortizacion = i - finalPeriodoGracia;
-                    const esMesAmortizacionCapital = (factorFrecuencia === 1) || (indiceAmortizacion % factorFrecuencia === 0);
-
-                    if (!esMesAmortizacionCapital) {
-                        cuotaActual = interes;
-                        capital = 0;
-                    } else {
-                        if (tipoAmortizacion === 'Constante') {
-                            capital = capitalFijoAmortizacion;
+                    if (tipoAmortizacion === 'Constante') {
+                        // Créditos Empresariales (Capital Constante / Alemán)
+                        if (esMesAmortizacionCapital) {
+                            // Mes de pago de capital: Se paga el capital fijo calculado + el interés
+                            capital = capitalFijo;
                             cuotaActual = capital + interes;
-                        } else if (tipoAmortizacion === 'Fija') {
-                            cuotaActual = cuotaFijaConstante;
+                        } else {
+                            // Mes intermedio: Solo se paga el interés (si la frecuencia es > mensual)
+                            cuotaActual = interes;
+                            capital = 0;
+                        }
+
+                    } else if (tipoAmortizacion === 'Fija') {
+                        // Créditos Persona Natural (Cuota Fija / Francés)
+                        if (factorFrecuencia === 1) {
+                            // Francés Mensual normal: Cuota total constante
+                            cuotaActual = cuotaFijaRecalculada;
                             capital = cuotaActual - interes;
+                        } else if (esMesAmortizacionCapital) {
+                            // Francés con frecuencia > mensual (Aproximación para cuota total del periodo fija)
+                            
+                            // El cálculo del capital amortizado se basa en la cuota fija del periodo (cuotaFijaRecalculada)
+                            // y el interés total devengado en ese periodo.
+                            let interesTotalPeriodo = interes * factorFrecuencia; 
+                            capital = cuotaFijaRecalculada - interesTotalPeriodo;
+                            cuotaActual = cuotaFijaRecalculada;
+                            
                             if (capital < 0) capital = 0; 
+
+                        } else if (esMesIntermedio) {
+                            // Mes intermedio: Solo interés (para Francés con frecuencia > mensual)
+                            cuotaActual = interes;
+                            capital = 0;
                         }
                     }
                 }
-
-                let saldoFinal = saldoPendiente - capital;
                 
-                if (i === finalPlazo || saldoFinal < 1) {
+                let saldoFlotante = saldoPendiente - capital;
+                
+                // --- AJUSTE DE LA ÚLTIMA CUOTA PARA CUADRAR EL SALDO (PRECISIÓN) ---
+                if (i === finalPlazo) {
+                    // El capital debe ser igual al saldo pendiente (absorbe cualquier diferencia de redondeo)
                     capital = saldoPendiente; 
-                    saldoFinal = 0;
-                    cuotaActual = capital + interes; 
+                    cuotaActual = capital + interes;
+                    saldoFlotante = 0;
                 }
 
                 totalInteres += interes;
                 totalCapital += capital;
                 totalPagado += cuotaActual;
-                saldoPendiente = saldoFinal;
+                saldoPendiente = saldoFlotante;
 
+                // Redondeo de los valores (Cero decimales para moneda)
                 const cuotaRounded = Math.round(cuotaActual);
                 const interesRounded = Math.round(interes);
                 const capitalRounded = Math.round(capital);
-                const saldoFinalRounded = Math.round(saldoFinal);
+                const saldoFinalRounded = Math.round(saldoFlotante);
 
                 tablaAmortizacion.push({
                     nCuota: i, fecha: fechaFormateada, cuota: cuotaRounded,
@@ -879,25 +1114,42 @@
             populateYearFilter(fullTrendData);
             filterTrendChart(); 
             
-            const cuotaMostrar = tipoAmortizacion === 'Fija' ? cuotaFijaConstante : capitalFijoAmortizacion + interesPrimeraAmortizacion;
-            document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaMostrar));
+            // --- DETALLES PARA MOSTRAR EN LA INTERFAZ ---
+            // Recalcular la cuota inicial de referencia
+            let cuotaInicialReferencia = 0;
+            if (tipoAmortizacion === 'Constante') {
+                cuotaInicialReferencia = capitalFijo + interesPrimeraAmortizacion;
+            } else { // Francés
+                if (frecuenciaAmortizacion === 'mensual') {
+                     cuotaInicialReferencia = cuotaFijaRecalculada;
+                } else {
+                    // Para Francés con frecuencia > mensual, la primera cuota es la primera en la tabla después del periodo de gracia
+                    cuotaInicialReferencia = tablaAmortizacion.find(c => c.nCuota > finalPeriodoGracia)?.cuota || interesPrimeraAmortizacion;
+                }
+            }
+
+
+            document.getElementById('detalle-cuota').textContent = formatCurrency(Math.round(cuotaInicialReferencia));
+            // ETIQUETA: Interés Estimado
             document.getElementById('detalle-interes-inicial').textContent = formatCurrency(Math.round(interesPrimeraAmortizacion));
             
             if (tipoAmortizacion === 'Constante') {
                 document.getElementById('label-cuota-fija').textContent = '1. Cuota Inicial:';
                 document.getElementById('row-capital-fijo').classList.remove('hidden');
-                document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijoAmortizacion));
+                // ETIQUETA: Capital Estimado
+                document.getElementById('detalle-capital-fijo').textContent = formatCurrency(Math.round(capitalFijo));
             } else {
                 document.getElementById('label-cuota-fija').textContent = '1. Cuota Mensual Fija:';
                 document.getElementById('row-capital-fijo').classList.add('hidden');
             }
 
-            document.getElementById('detalle-tasa-mensual').textContent = (tasaMensual * 100).toFixed(4) + '%';
-            document.getElementById('detalle-tasa-efectiva').textContent = (tasaEfectivaAnual * 100).toFixed(4) + '%';
+            // Mostrar tasas recalculadas - CAMBIO DE DECIMALES A 2
+            document.getElementById('detalle-tasa-mensual').textContent = (tasaMensual * 100).toFixed(2) + '%';
+            document.getElementById('detalle-tasa-efectiva').textContent = (tasaEfectivaAnual * 100).toFixed(2) + '%';
             
             if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'TNA') {
                  document.getElementById('row-tasa-nominal').classList.remove('hidden');
-                 document.getElementById('detalle-tasa-nominal').textContent = (tasaNominalAnual * 100).toFixed(4) + '%';
+                 document.getElementById('detalle-tasa-nominal').textContent = (tasaNominalAnual * 100).toFixed(2) + '%';
             } else {
                  document.getElementById('row-tasa-nominal').classList.add('hidden');
             }
@@ -918,6 +1170,8 @@
             consecutiveCounter++;
             document.getElementById('btn-consecutivo').textContent = `N.º ${String(consecutiveCounter).padStart(3, '0')}-2025`;
         }
+        // --- FIN DE simularCredito() ---
+
 
         function populateYearFilter(data) {
             const select = document.getElementById('trend-year-filter');
@@ -1021,7 +1275,7 @@
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                        legend: { position: 'bottom' },
                         title: { display: false },
                         tooltip: {
                             callbacks: {
@@ -1076,7 +1330,7 @@
                     },
                     scales: {
                         x: { stacked: false, title: { display: true, text: 'Año' }, ticks: { font: { size: 10 } } },
-                        y: { stacked: false, beginAtZero: true, title: { display: true, text: 'Monto ($)' }, ticks: { callback: function(value) { return formatCurrency(value); }, font: { size: 10 } } }
+                        y: { stacked: false, beginAtZero: true, title: { display: true, text: 'Monto ($)' }, ticks: { callback: function(value) { return formatCurrency(value); } } }
                     }
                 }
             });
@@ -1102,14 +1356,40 @@
             });
         }
 
+        // NUEVA FUNCIÓN: Controla la disponibilidad de las opciones de tasa según la amortización
+        function updateTasaOptions() {
+            const tipoAmortizacion = document.getElementById('tipo-amortizacion').value;
+            const tasaReferenciaSelect = document.getElementById('tasa-referencia');
+            
+            // Opciones del selector de tasa
+            const options = tasaReferenciaSelect.options;
+
+            // Deshabilitar DTF/IBR si es Cuota Fija (Francés)
+            const disableVariableRates = (tipoAmortizacion === 'Fija');
+            
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === 'DTF' || options[i].value === 'IBR') {
+                    options[i].disabled = disableVariableRates;
+                    options[i].style.color = disableVariableRates ? '#9CA3AF' : '#1F2937';
+                }
+            }
+
+            // Si el modo es Francés y la tasa actual es DTF o IBR, forzar a EA
+            if (disableVariableRates && (tasaReferenciaSelect.value === 'DTF' || tasaReferenciaSelect.value === 'IBR')) {
+                tasaReferenciaSelect.value = 'EA';
+            }
+        }
+
         function updateTasaLabels() {
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
             const tasaExplicacion = document.getElementById('tasa-explicacion');
-            if (tasaReferenciaKey === 'EA') {
+            if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
                 tasaExplicacion.textContent = 'TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).';
             } else {
                 tasaExplicacion.textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
             }
+            // Ejecutar la simulación para actualizar los detalles al cambiar el tipo de tasa
+            simularCredito();
         }
 
         window.onload = function() {
@@ -1127,9 +1407,22 @@
                 initialSelect.appendChild(option);
             }
 
-            document.querySelectorAll('#monto, #plazo, #spread, #frecuencia-amortizacion, #tasa-base-input, #periodo-gracia, #tipo-amortizacion').forEach(input => {
+            // Listener solo para 'plazo', 'spread', 'tasa-base-input', 'periodo-gracia', y 'frecuencia-amortizacion'
+            document.querySelectorAll('#plazo, #spread, #tasa-base-input, #periodo-gracia, #frecuencia-amortizacion').forEach(input => {
+                input.addEventListener('change', simularCredito);
                 input.addEventListener('keyup', (e) => { if (e.key === 'Enter') simularCredito(); });
             });
+            
+            // Listener específico para 'monto', ya que usa oninput para formateo
+            document.getElementById('monto').addEventListener('change', simularCredito);
+            document.getElementById('monto').addEventListener('keyup', (e) => { if (e.key === 'Enter') simularCredito(); });
+            
+            // Listener para amortización que ahora llama a updateTasaOptions primero
+            document.getElementById('tipo-amortizacion').addEventListener('change', function() {
+                updateTasaOptions();
+                simularCredito();
+            });
+
             document.getElementById('tasa-referencia').addEventListener('change', updateTasaLabels);
             
             const plazoInput = document.getElementById('plazo');
@@ -1143,8 +1436,17 @@
                     plazoWarning.classList.add('hidden');
                 }
             });
+            plazoInput.addEventListener('change', simularCredito);
 
-            script.onload = () => { updateTasaLabels(); };
+
+            script.onload = () => { 
+                updateTasaOptions(); // Asegurar estado inicial de tasas
+                updateTasaLabels(); 
+            };
+            
+            // Formatear el valor inicial al cargar la página
+            const montoInput = document.getElementById('monto');
+            formatInputCurrency(montoInput);
         };
     </script>
 </body>
