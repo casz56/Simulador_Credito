@@ -101,6 +101,10 @@
                     <button id="download-pdf-btn" onclick="exportToPDF()" class="flex-1 md:flex-none justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold bg-infihuila-blue text-white rounded-lg shadow-md hover:bg-infihuila-green hover:shadow-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
                         Descargar PDF
                     </button>
+
+                    <button id="open-captacion-btn" onclick="openCaptacion()" class="flex-1 md:flex-none justify-center px-4 py-2.5 text-xs sm:text-sm font-semibold bg-white text-infihuila-blue rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 hover:shadow-lg transition-all duration-300 ease-in-out transform active:scale-95">
+                        Captación
+                    </button>
                 </div>
             </div>
         </header>
@@ -159,7 +163,7 @@
                             <!-- Se añade el listener oninput para formatear y onchange para simular -->
                             <input type="text" 
                                    id="monto" 
-                                   value="13.200.000.000" 
+                                   value="10.000.000" 
                                    pattern="[0-9.,]*"
                                    oninput="formatInputCurrency(this)" 
                                    class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
@@ -167,7 +171,7 @@
 
                         <div>
                             <label for="plazo" class="block text-xs sm:text-sm font-medium mb-1 text-gray-700">Plazo (Meses)</label>
-                            <!-- Plazo ajustado a 96 meses -->
+                            <!-- Plazo ajustado a 72 meses -->
                             <input type="number" id="plazo" value="96" min="12" max="360" step="1" class="w-full p-2.5 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-infihuila-green focus:border-infihuila-green outline-none transition-all">
                             <p id="plazo-warning" class="hidden text-[10px] sm:text-xs text-infihuila-blue font-bold mt-2 bg-teal-50 p-2 rounded border border-infihuila-blue animate-pulse">
                                 ⚠️ Plazo > 96 meses: Requiere aprobación del consejo directivo.
@@ -444,6 +448,209 @@
         </footer>
 
     </div>
+
+
+    <!-- =========================
+         LAYOUT CAPTACIÓN (OVERLAY)
+         ========================= -->
+    <div id="layout-captacion" class="hidden fixed inset-0 z-[9999] bg-infihuila-light overflow-y-auto">
+      <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- HEADER -->
+        <header class="cap-card p-6 border-l-8 border-infihuila-blue">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <h1 class="text-3xl font-black text-infihuila-blue">Simulador de Captación</h1>
+              <p class="cap-muted mt-1">CDAT y Productos a la Vista</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+              <div class="inline-flex items-center gap-2 rounded-full px-4 py-2 border border-gray-200 bg-white">
+                <span class="text-sm font-bold text-infihuila-blue">Fecha simulación:</span>
+                <span class="text-sm font-extrabold" id="cap-fechaSim"></span>
+              </div>
+
+              <button type="button" onclick="closeCaptacion()" class="px-4 py-2 rounded-full font-extrabold bg-infihuila-blue text-white shadow hover:bg-[#004f53] transition">
+                Volver a Créditos
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- FORM -->
+        <section class="cap-card p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <div>
+              <label class="block font-extrabold mb-2">Tipo de Línea</label>
+              <select id="cap-linea" class="cap-input">
+                <option value="">Seleccione</option>
+                <option value="CDAT">CDAT</option>
+                <option value="VISTA">Producto a la Vista</option>
+              </select>
+              <div class="cap-muted mt-1">Seleccione la línea de captación.</div>
+            </div>
+
+            <div>
+              <label class="block font-extrabold mb-2">Monto a invertir</label>
+              <input id="cap-monto" class="cap-input bg-blue-50" inputmode="numeric" placeholder="$ 0" />
+              <div class="cap-muted mt-1">Puedes escribir con o sin “$”, con o sin puntos.</div>
+            </div>
+
+            <div id="cap-plazoWrap">
+              <label class="block font-extrabold mb-2">Plazo (días)</label>
+              <select id="cap-plazo" class="cap-input">
+                <option value="90">90</option>
+                <option value="180">180</option>
+                <option value="360" selected>360</option>
+                <option value="540">540</option>
+                <option value="720">720</option>
+              </select>
+              <div class="cap-muted mt-1">Aplica para CDAT.</div>
+            </div>
+
+            <div>
+              <label class="block font-extrabold mb-2">Tasa E.A. (%)</label>
+              <input id="cap-tasaEA" type="number" class="cap-input bg-blue-50" step="0.01" placeholder="Ej: 8.50" />
+              <div class="cap-muted mt-1">Tasa efectiva anual.</div>
+            </div>
+
+            <div id="cap-pagoWrap">
+              <label class="block font-extrabold mb-2">Pago de intereses</label>
+              <select id="cap-pago" class="cap-input">
+                <option value="vencimiento" selected>Al vencimiento</option>
+                <option value="mensual">Mensual</option>
+                <option value="trimestral">Trimestral</option>
+              </select>
+              <div class="cap-muted mt-1">Aplica para CDAT.</div>
+            </div>
+
+            <div id="cap-horizonteWrap">
+              <label class="block font-extrabold mb-2">Horizonte (meses)</label>
+              <select id="cap-horizonte" class="cap-input">
+                <option value="12" selected>12</option>
+                <option value="24">24</option>
+                <option value="36">36</option>
+              </select>
+              <div class="cap-muted mt-1">Aplica para Producto a la Vista.</div>
+            </div>
+
+            <div class="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
+              <label class="inline-flex items-center gap-2">
+                <input id="cap-aplicaRete" type="checkbox" class="accent-infihuila-blue" checked />
+                <span class="font-extrabold">Aplicar retención en la fuente (4%)</span>
+              </label>
+              <span class="cap-muted">Se aplica sobre intereses (referencial).</span>
+            </div>
+
+          </div>
+
+          <div class="mt-6 text-center">
+            <button id="cap-btnSimular" type="button"
+              class="bg-infihuila-blue text-white px-12 py-3 rounded-full font-extrabold shadow hover:bg-[#004f53] transition">
+              Simular
+            </button>
+          </div>
+        </section>
+
+        <!-- KPIs -->
+        <section id="cap-kpiSection" class="hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="cap-kpi"><div class="cap-kpi-t">Interés bruto</div><div class="cap-kpi-v" id="cap-kpiBruto">$0</div></div>
+            <div class="cap-kpi"><div class="cap-kpi-t">Retención</div><div class="cap-kpi-v" id="cap-kpiRete">$0</div></div>
+            <div class="cap-kpi"><div class="cap-kpi-t">Interés neto</div><div class="cap-kpi-v" id="cap-kpiNeto">$0</div></div>
+            <div class="cap-kpi"><div class="cap-kpi-t">Total recibido</div><div class="cap-kpi-v" id="cap-kpiTotal">$0</div></div>
+          </div>
+
+          <div class="mt-4 cap-card p-6">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-black text-infihuila-blue">Resumen</h2>
+                <p class="cap-muted mt-1" id="cap-resumenTxt">—</p>
+              </div>
+              <div class="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-infihuila-green/30 border border-infihuila-green">
+                <span class="text-sm font-black text-infihuila-blue">Tasa E.A.:</span>
+                <span class="text-sm font-extrabold" id="cap-resTasa">—</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHARTS -->
+        <section id="cap-chartsSection" class="hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="cap-card p-6">
+              <h3 class="font-black text-infihuila-blue">Interés neto por período</h3>
+              <p class="cap-muted mt-1">Barras</p>
+              <div class="mt-4"><canvas id="cap-chartBar"></canvas></div>
+            </div>
+            <div class="cap-card p-6">
+              <h3 class="font-black text-infihuila-blue">Interés neto acumulado</h3>
+              <p class="cap-muted mt-1">Línea</p>
+              <div class="mt-4"><canvas id="cap-chartLine"></canvas></div>
+            </div>
+            <div class="cap-card p-6">
+              <h3 class="font-black text-infihuila-blue">Composición del retorno</h3>
+              <p class="cap-muted mt-1">Torta: Capital vs Interés neto</p>
+              <div class="mt-4"><canvas id="cap-chartPie"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TABLE -->
+        <section id="cap-tablaSection" class="cap-card p-6 hidden">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-black text-infihuila-blue">Tabla de amortización (cronograma)</h3>
+              <p class="cap-muted mt-1">Pagos de intereses + devolución de capital según frecuencia.</p>
+            </div>
+            <div class="flex gap-2">
+              <button id="cap-btnCopiar" type="button" class="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 font-extrabold">
+                Copiar tabla
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 overflow-auto rounded-xl border border-gray-200">
+            <table class="min-w-full text-sm cap-tbl">
+              <thead>
+                <tr class="text-left">
+                  <th class="px-4 py-3 font-black">#</th>
+                  <th class="px-4 py-3 font-black">Fecha pago</th>
+                  <th class="px-4 py-3 font-black">Días</th>
+                  <th class="px-4 py-3 font-black">Saldo inicial</th>
+                  <th class="px-4 py-3 font-black">Interés bruto</th>
+                  <th class="px-4 py-3 font-black">Retención</th>
+                  <th class="px-4 py-3 font-black">Interés neto</th>
+                  <th class="px-4 py-3 font-black">Abono capital</th>
+                  <th class="px-4 py-3 font-black">Saldo final</th>
+                </tr>
+              </thead>
+              <tbody id="cap-tablaBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="text-center text-xs text-gray-500 py-6">
+          © 2026 INFIHUILA - Instituto de Financiamiento, Promoción y Desarrollo del Huila · Documento controlado.
+        </footer>
+
+      </div>
+
+      <style>
+        .cap-card{ background:#fff; border-radius: 1rem; box-shadow: 0 10px 20px rgba(17,24,39,.08); }
+        .cap-input{ width:100%; padding:.75rem .9rem; border:1px solid #e5e7eb; border-radius:.75rem; font-size:16px; background:#fff; }
+        .cap-input:focus{ outline:none; border-color:#006C72; box-shadow:0 0 0 4px rgba(0,108,114,.12); }
+        .cap-err{ border-color:#ef4444 !important; background:#fef2f2 !important; }
+        .cap-muted{ color:#6b7280; font-size:.9rem; }
+        .cap-kpi{ border:1px solid #e5e7eb; border-radius: 1rem; padding: 1rem; background:#fff; }
+        .cap-kpi-t{ color:#6b7280; font-size:.85rem; }
+        .cap-kpi-v{ font-weight:900; font-size:1.15rem; color:#111827; }
+        .cap-tbl th{ position: sticky; top:0; z-index:1; background:#f9fafb; }
+      </style>
+    </div>
+
 
     <script>
         // Inicialización de variables
@@ -1605,5 +1812,380 @@
             formatInputCurrency(montoInput);
         };
     </script>
+
+    <script>
+      // =========================
+      // Layout switch (Captación)
+      // =========================
+      function openCaptacion(){
+        const el = document.getElementById('layout-captacion');
+        if(el) el.classList.remove('hidden');
+        try { document.activeElement && document.activeElement.blur(); } catch(e){}
+        // Inicializar fecha visible
+        const fs = document.getElementById('cap-fechaSim');
+        if(fs && !fs.textContent) {
+          const d = new Date(); d.setHours(0,0,0,0);
+          fs.textContent = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+        }
+      }
+      function closeCaptacion(){
+        const el = document.getElementById('layout-captacion');
+        if(el) el.classList.add('hidden');
+      }
+
+      // =========================
+      // Simulador de Captación
+      // =========================
+      (function(){
+        const $ = (id) => document.getElementById(id);
+
+        function fmtCOP(n){
+          const v = Number(n);
+          if(!isFinite(v)) return "$ 0";
+          return v.toLocaleString("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
+        }
+        function parseMoney(str){
+          const cleaned = String(str ?? "").replace(/[^\d]/g, "");
+          return cleaned ? Number(cleaned) : NaN;
+        }
+        function todayZero(){ const d = new Date(); d.setHours(0,0,0,0); return d; }
+        function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+        function fmtDate(d){
+          const dd = String(d.getDate()).padStart(2,"0");
+          const mm = String(d.getMonth()+1).padStart(2,"0");
+          const yy = d.getFullYear();
+          return `${dd}/${mm}/${yy}`;
+        }
+        function eaToRateByDays(ea, days){ return Math.pow(1 + ea, days/360) - 1; }
+        function eaToMonthlyEff(ea){ return Math.pow(1 + ea, 1/12) - 1; }
+        function setErr(el, on){ if(el) el.classList.toggle("cap-err", !!on); }
+        function pagoLabel(v){
+          if(v==="vencimiento") return "Al vencimiento";
+          if(v==="mensual") return "Mensual";
+          if(v==="trimestral") return "Trimestral";
+          return v;
+        }
+
+        // Charts (usa Chart.js ya cargado en la página)
+        let capBar=null, capLine=null, capPie=null;
+        function destroyCharts(){
+          if(capBar){ capBar.destroy(); capBar=null; }
+          if(capLine){ capLine.destroy(); capLine=null; }
+          if(capPie){ capPie.destroy(); capPie=null; }
+        }
+        function buildCharts(labels, netos, acumulados, capital, interesNeto){
+          destroyCharts();
+          if(typeof Chart === "undefined"){
+            console.warn("Chart.js no está cargado.");
+            return;
+          }
+
+          // Paleta institucional INFIHUILA
+          const C_BLUE  = "#006C72";
+          const C_GREEN = "#CCD400";
+          const C_TEXT  = "#1F2937";
+
+          const rgba = (hex, a) => {
+            const h = hex.replace("#","");
+            const r = parseInt(h.slice(0,2),16);
+            const g = parseInt(h.slice(2,4),16);
+            const b = parseInt(h.slice(4,6),16);
+            return `rgba(${r},${g},${b},${a})`;
+          };
+
+          // Bar
+          capBar = new Chart($("cap-chartBar"), {
+            type: "bar",
+            data: {
+              labels,
+              datasets: [{
+                label: "Interés neto",
+                data: netos,
+                backgroundColor: rgba(C_BLUE, 0.35),
+                borderColor: C_BLUE,
+                borderWidth: 2,
+                borderRadius: 10,
+                maxBarThickness: 48
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: { label: (ctx) => ` ${fmtCOP(ctx.parsed.y ?? 0)}` }
+                }
+              },
+              scales: {
+                x: { ticks: { color: C_TEXT } },
+                y: { ticks: { color: C_TEXT, callback: (v) => fmtCOP(v) } }
+              }
+            }
+          });
+
+          // Line
+          capLine = new Chart($("cap-chartLine"), {
+            type: "line",
+            data: {
+              labels,
+              datasets: [{
+                label: "Acumulado",
+                data: acumulados,
+                tension: 0.25,
+                fill: true,
+                borderColor: C_BLUE,
+                backgroundColor: rgba(C_GREEN, 0.18),
+                pointBackgroundColor: C_GREEN,
+                pointBorderColor: C_BLUE,
+                pointBorderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: { label: (ctx) => ` ${fmtCOP(ctx.parsed.y ?? 0)}` }
+                }
+              },
+              scales: {
+                x: { ticks: { color: C_TEXT } },
+                y: { ticks: { color: C_TEXT, callback: (v) => fmtCOP(v) } }
+              }
+            }
+          });
+
+          // Pie
+          capPie = new Chart($("cap-chartPie"), {
+            type: "pie",
+            data: {
+              labels: ["Capital", "Interés neto"],
+              datasets: [{
+                data: [capital, interesNeto],
+                backgroundColor: [rgba(C_BLUE, 0.85), rgba(C_GREEN, 0.85)],
+                borderColor: "#ffffff",
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                  labels: { color: C_TEXT }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (ctx) => {
+                      const v = ctx.parsed ?? 0;
+                      return ` ${ctx.label}: ${fmtCOP(v)}`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        function refreshLineaUI(){
+          const linea = $("cap-linea")?.value;
+          const isCDAT = linea === "CDAT";
+          const isVISTA = linea === "VISTA";
+          if($("cap-plazoWrap")) $("cap-plazoWrap").style.display = isCDAT ? "block" : "none";
+          if($("cap-pagoWrap")) $("cap-pagoWrap").style.display  = isCDAT ? "block" : "none";
+          if($("cap-horizonteWrap")) $("cap-horizonteWrap").style.display = isVISTA ? "block" : "none";
+        }
+
+        function renderTable(rows){
+          const tb = $("cap-tablaBody");
+          if(!tb) return;
+          tb.innerHTML = "";
+          for(const r of rows){
+            const tr = document.createElement("tr");
+            tr.className = "border-t border-gray-100 hover:bg-gray-50";
+            tr.innerHTML = `
+              <td class="px-4 py-3 font-extrabold">${r.n}</td>
+              <td class="px-4 py-3">${r.fechaPago}</td>
+              <td class="px-4 py-3">${r.dias}</td>
+              <td class="px-4 py-3">${fmtCOP(r.saldoIni)}</td>
+              <td class="px-4 py-3">${fmtCOP(r.interesBruto)}</td>
+              <td class="px-4 py-3">${fmtCOP(r.retencion)}</td>
+              <td class="px-4 py-3 font-extrabold text-infihuila-blue">${fmtCOP(r.interesNeto)}</td>
+              <td class="px-4 py-3">${fmtCOP(r.abonoCapital)}</td>
+              <td class="px-4 py-3">${fmtCOP(r.saldoFin)}</td>
+            `;
+            tb.appendChild(tr);
+          }
+        }
+
+        function copyTable(){
+          const table = document.querySelector("#cap-tablaSection table");
+          if(!table) return;
+          const range = document.createRange();
+          range.selectNode(table);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          try{
+            document.execCommand("copy");
+            sel.removeAllRanges();
+            alert("Tabla copiada. Pégala en Excel o Word.");
+          } catch(e){
+            alert("No se pudo copiar automáticamente. Selecciona y copia manualmente.");
+          }
+        }
+
+        function simulate(){
+          setErr($("cap-linea"), false);
+          setErr($("cap-monto"), false);
+          setErr($("cap-tasaEA"), false);
+
+          const linea = $("cap-linea").value;
+          const monto = parseMoney($("cap-monto").value);
+          const tasaEA_pct = Number($("cap-tasaEA").value);
+          const tasaEA = tasaEA_pct / 100;
+          const reteRate = $("cap-aplicaRete").checked ? 0.04 : 0.0;
+
+          let ok = true;
+          if(!linea){ setErr($("cap-linea"), true); ok=false; }
+          if(!isFinite(monto) || monto<=0){ setErr($("cap-monto"), true); ok=false; }
+          if(!isFinite(tasaEA_pct) || tasaEA_pct<=0){ setErr($("cap-tasaEA"), true); ok=false; }
+          if(!ok){
+            alert("Por favor completa: Tipo de Línea, Monto y Tasa E.A.");
+            return;
+          }
+
+          const start = todayZero();
+          let schedule = [];
+          let saldo = monto;
+          let fecha = new Date(start);
+
+          let totalBruto=0, totalRete=0, totalNeto=0;
+
+          if(linea === "CDAT"){
+            const plazoDias = Number($("cap-plazo").value);
+            const pago = $("cap-pago").value;
+
+            let freqDays = plazoDias;
+            if(pago === "mensual") freqDays = 30;
+            if(pago === "trimestral") freqDays = 90;
+
+            let remaining = plazoDias;
+            let n = 0;
+
+            while(remaining > 0){
+              n++;
+              const diasPeriodo = Math.min(freqDays, remaining);
+              const r = eaToRateByDays(tasaEA, diasPeriodo);
+
+              const interesBruto = saldo * r;
+              const retencion = interesBruto * reteRate;
+              const interesNeto = interesBruto - retencion;
+
+              const isLast = (remaining - diasPeriodo) === 0;
+              const abonoCapital = isLast ? saldo : 0;
+              const saldoFinal = saldo - abonoCapital;
+
+              totalBruto += interesBruto;
+              totalRete += retencion;
+              totalNeto += interesNeto;
+
+              fecha = addDays(fecha, diasPeriodo);
+
+              schedule.push({
+                n, fechaPago: fmtDate(fecha), dias: diasPeriodo,
+                saldoIni: saldo,
+                interesBruto, retencion, interesNeto,
+                abonoCapital,
+                saldoFin: saldoFinal
+              });
+
+              saldo = saldoFinal;
+              remaining -= diasPeriodo;
+            }
+
+            $("cap-resumenTxt").textContent =
+              `Línea: CDAT · Plazo: ${plazoDias} días · Pago: ${pagoLabel(pago)} · Retención: ${reteRate>0 ? "Sí (4%)" : "No"}`;
+          } else {
+            const meses = Number($("cap-horizonte").value);
+            const rMensual = eaToMonthlyEff(tasaEA);
+
+            for(let n=1; n<=meses; n++){
+              const diasPeriodo = 30;
+              const interesBruto = saldo * rMensual;
+              const retencion = interesBruto * reteRate;
+              const interesNeto = interesBruto - retencion;
+
+              totalBruto += interesBruto;
+              totalRete += retencion;
+              totalNeto += interesNeto;
+
+              fecha = addDays(fecha, diasPeriodo);
+
+              schedule.push({
+                n, fechaPago: fmtDate(fecha), dias: diasPeriodo,
+                saldoIni: saldo,
+                interesBruto, retencion, interesNeto,
+                abonoCapital: 0,
+                saldoFin: saldo
+              });
+            }
+
+            $("cap-resumenTxt").textContent =
+              `Línea: Producto a la Vista · Horizonte: ${meses} meses · Pago: Mensual · Retención: ${reteRate>0 ? "Sí (4%)" : "No"}`;
+          }
+
+          $("cap-kpiBruto").textContent = fmtCOP(totalBruto);
+          $("cap-kpiRete").textContent  = fmtCOP(totalRete);
+          $("cap-kpiNeto").textContent  = fmtCOP(totalNeto);
+          $("cap-kpiTotal").textContent = fmtCOP(monto + totalNeto);
+          $("cap-resTasa").textContent  = `${tasaEA_pct.toFixed(2)}%`;
+
+          $("cap-kpiSection").classList.remove("hidden");
+          renderTable(schedule);
+          $("cap-tablaSection").classList.remove("hidden");
+
+          const labels = schedule.map(r => `P${r.n}`);
+          const netos  = schedule.map(r => Math.round(r.interesNeto));
+          const acumulados = [];
+          let acc = 0;
+          for(const v of netos){ acc += v; acumulados.push(acc); }
+
+          $("cap-chartsSection").classList.remove("hidden");
+          buildCharts(labels, netos, acumulados, monto, Math.round(totalNeto));
+
+          $("cap-kpiSection").scrollIntoView({ behavior:"smooth", block:"start" });
+        }
+
+        // Init
+        document.addEventListener("DOMContentLoaded", () => {
+          const fs = $("cap-fechaSim");
+          if(fs) fs.textContent = fmtDate(todayZero());
+
+          const montoEl = $("cap-monto");
+          if(montoEl){
+            montoEl.addEventListener("blur", () => {
+              const val = parseMoney(montoEl.value);
+              if(isFinite(val) && val > 0) montoEl.value = fmtCOP(val);
+            });
+          }
+
+          const lineaEl = $("cap-linea");
+          if(lineaEl){
+            lineaEl.addEventListener("change", refreshLineaUI);
+            refreshLineaUI();
+          }
+
+          const simBtn = $("cap-btnSimular");
+          if(simBtn) simBtn.addEventListener("click", simulate);
+
+          const copyBtn = $("cap-btnCopiar");
+          if(copyBtn) copyBtn.addEventListener("click", copyTable);
+        });
+      })();
+    </script>
+
 </body>
 </html>
