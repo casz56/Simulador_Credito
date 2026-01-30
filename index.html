@@ -1294,22 +1294,44 @@
                 finalPeriodoGracia = 0;
             }
             
-            // --- CÁLCULO DE TASAS INICIALES Y CONVERSIÓN A TEM (Tasa Efectiva Mensual) ---
+            // --- CÁLCULO DE TASAS INICIALES Y CONVERSIÓN A TASA MENSUAL ---
             const tasaBase = tasaBaseInput / 100;
             const tasaAnualTotal = tasaBase + spread;
-            let tasaMensual = 0; // Tasa Efectiva Mensual (TEM)
 
-            if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
-                // Si la base es EA (o DTF/IBR, que se asumen como EA en el contexto de tasas), se usa la fórmula efectiva
+            // tasaMensual: tasa periódica según la frecuencia (en este simulador se trabaja mensual)
+            let tasaMensual = 0;
+
+            // Variables de presentación (lo que se muestra en "Tasa Mensual" y "Tasa Final (E.A.)")
+            // Nota: En el software institucional para Créditos Empresariales con IBR/DTF,
+            // la "Tasa Def." se suma (Base + Spread) y el interés mensual se liquida como (Tasa Def. / 12),
+            // NO como conversión efectiva (1+EA)^(1/12)-1.
+            let tasaEfectivaAnual = 0;
+            let tasaNominalAnual = 0;
+
+            const esEmpresarial = (tipoAmortizacion === 'Constante');
+            const esIBRoDTF = (tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR');
+
+            if (esEmpresarial && esIBRoDTF) {
+                // Regla institucional (Empresariales): interés vencido sobre saldo con TNM = tasa anual total / 12
+                tasaMensual = tasaAnualTotal / MONTHS_IN_YEAR;
+
+                // Para coincidir con "Tasa Def.(%)" del institucional, mostramos la anual total como "Tasa Final (E.A.)"
+                // (aunque la liquidación sea nominal mensual).
+                tasaEfectivaAnual = tasaAnualTotal;
+                tasaNominalAnual = tasaAnualTotal;
+
+            } else if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
+                // Cálculo efectivo: TEM = (1 + EA)^(1/12) - 1
                 tasaMensual = Math.pow(1 + tasaAnualTotal, 1 / MONTHS_IN_YEAR) - 1;
+                tasaEfectivaAnual = effectiveMonthlyToEffectiveAnnual(tasaMensual);
+                tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
+
             } else { // TNA
-                // Si la base es TNA, se usa la fórmula nominal para TEM
+                // Cálculo nominal: TNM = TNA / 12
                 tasaMensual = nominalToEffectiveMonthly(tasaAnualTotal);
+                tasaEfectivaAnual = effectiveMonthlyToEffectiveAnnual(tasaMensual);
+                tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
             }
-            
-            // Recálculo de las tasas anuales para mostrar los detalles correctamente
-            const tasaEfectivaAnual = effectiveMonthlyToEffectiveAnnual(tasaMensual);
-            const tasaNominalAnual = tasaMensual * MONTHS_IN_YEAR;
             // ----------------------------------------------------------------------------
             
             const plazoAmortizacion = finalPlazo - finalPeriodoGracia;
@@ -1754,12 +1776,19 @@
 
         function updateTasaLabels() {
             const tasaReferenciaKey = document.getElementById('tasa-referencia').value;
+            const tipoAmortizacion = document.getElementById('tipo-amortizacion')?.value || '';
             const tasaExplicacion = document.getElementById('tasa-explicacion');
-            if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
+
+            // Regla institucional: Créditos Empresariales (Constante) con IBR/DTF se liquida con interés NOMINAL mensual
+            // (tasa anual / 12) sobre saldo, tal como el software institucional.
+            if (tipoAmortizacion === 'Constante' && (tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR')) {
+                tasaExplicacion.textContent = 'TNM (institucional) = (Tasa Anual Total) / 12. Interés vencido sobre saldo.';
+            } else if (tasaReferenciaKey === 'EA' || tasaReferenciaKey === 'DTF' || tasaReferenciaKey === 'IBR') {
                 tasaExplicacion.textContent = 'TEM = (1 + E.A.)^(1/12) - 1 (Cálculo Efectivo).';
             } else {
                 tasaExplicacion.textContent = 'TNM = TNA / 12 (Cálculo Nominal).';
             }
+
             // Ejecutar la simulación para actualizar los detalles al cambiar el tipo de tasa
             simularCredito();
         }
