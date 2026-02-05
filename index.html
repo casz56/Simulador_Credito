@@ -443,8 +443,11 @@
         </div>
 
         <footer class="mt-8 mb-4 text-center text-[10px] sm:text-xs text-gray-500 leading-relaxed w-full">
-            © 2025 INFIHUILA - Instituto de Financiamiento, Promoción y Desarrollo del Huila<br>
+            © 2025 INFIHUILA - Instituto de Financiero para el Desarrollo del Huila<br>
             Documento controlado. Cualquier impresión es copia no controlada.
+            El presente documento constituye una simulación financiera elaborada
+            con fines informativos y de análisis, por lo cual los resultados aquí 
+            expuestos no representan compromisos definitivos ni obligaciones contractuales
         </footer>
 
     </div>
@@ -648,7 +651,7 @@
 
         <!-- FOOTER -->
         <footer class="text-center text-xs text-gray-500 py-6">
-          © 2026 INFIHUILA - Instituto de Financiamiento, Promoción y Desarrollo del Huila · Documento controlado.
+          © 2026 INFIHUILA - Instituto Financiero para el Desarrollo del Huila · Documento controlado. El presente documento constituye una simulación financiera elaborada con fines informativos y de análisis, por lo cual los resultados aquí expuestos no representan compromisos definitivos ni obligaciones contractuales
         </footer>
 
       </div>
@@ -1103,7 +1106,21 @@
             const HEADER_SPACE = 28;     // espacio reservado (mm) para logo/título/fecha
             const FOOTER_SPACE = 24;     // espacio reservado (mm) para el pie (imagen)
 
-            // Registrar fuente (Tw Cen MT) si está incrustada; si no, usa Helvetica
+            
+
+            // --- Leyenda legal (se reserva espacio para que la tabla NO la pise) ---
+            const LEGEND_TEXT = 'El presente documento constituye una simulación financiera elaborada con fines informativos y de análisis, por lo cual los resultados aquí expuestos no representan compromisos definitivos ni obligaciones contractuales.';
+            const LEGEND_FONT_SIZE = 7;
+            const LEGEND_LINE_H = 3; // mm
+            // calcular alto real de la leyenda según el ancho disponible
+            doc.setFontSize(LEGEND_FONT_SIZE);
+            doc.setFont(undefined, "normal");
+            const legendMaxW = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+            const legendLines = doc.splitTextToSize(LEGEND_TEXT, legendMaxW);
+            const legendHeight = legendLines.length * LEGEND_LINE_H;
+            // reserva: footer + (espacio paginación) + (leyenda) + padding
+            const RESERVED_BOTTOM = FOOTER_SPACE + legendHeight + 10;
+// Registrar fuente (Tw Cen MT) si está incrustada; si no, usa Helvetica
             registerTwCenMT(doc);
 
             const today = new Date();
@@ -1144,7 +1161,14 @@
                 doc.setFontSize(9);
                 doc.setTextColor(90);
                 doc.text(`Página ${pageNum} de ${totalPages}`, PAGE_WIDTH - MARGIN_RIGHT, PAGE_HEIGHT - footerH - 8, { align: "right" });
-            };
+
+                // Leyenda legal (antes del pie) - posición fija y con espacio reservado
+            doc.setFontSize(LEGEND_FONT_SIZE);
+            doc.setTextColor(80);
+            const legendY = PAGE_HEIGHT - footerH - 14 - legendHeight; // arriba del pie y paginación
+            doc.text(legendLines, MARGIN_LEFT, legendY, { maxWidth: legendMaxW });
+            doc.setTextColor(0);
+};
 
             // --------------------------
             // Página 1: Resumen
@@ -1182,7 +1206,7 @@
             doc.setTextColor(0, 108, 114);
             doc.setFontSize(13);
             doc.setFont(undefined, "bold");
-            doc.text("II. CONDICIONES DEL CRÉDITO", MARGIN_LEFT, yPos);
+            doc.text("II. INFORMACIÓN DEL CRÉDITO", MARGIN_LEFT, yPos);
 
             yPos += 9;
             doc.setTextColor(0, 0, 0);
@@ -1191,9 +1215,49 @@
 
             const valor = safeText(document.getElementById("valor")?.value || "");
             const plazo = safeText(document.getElementById("plazo")?.value || "");
+            const tipoAmort = safeText(document.getElementById("tipo-amortizacion")?.value || "");
+            const periodoGracia = safeText(document.getElementById("periodo-gracia")?.value || "0");
+            const tipoTasaBaseTxt = safeText(document.querySelector("#tasa-referencia option:checked")?.textContent || document.getElementById("tasa-referencia")?.value || "");
+            const tasaBase = safeText(document.getElementById("tasa-base-input")?.value || "");
+            const spread = safeText(document.getElementById("spread")?.value || "0");
+            const formaAmortTxt = safeText(document.querySelector("#frecuencia-amortizacion option:checked")?.textContent || document.getElementById("frecuencia-amortizacion")?.value || "Mensual");
+
+            doc.setFont(undefined, "bold"); doc.text("Monto del Crédito ($):", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(valor, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Plazo (Meses):", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(plazo, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Tipo de Amortización:", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(tipoAmort, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Período de Gracia:", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(`${periodoGracia} Meses`, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Tipo de Tasa Base:", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(tipoTasaBaseTxt, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Tasa Base (%):", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(tasaBase, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Spread (Pts):", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(spread, valueX, yPos); yPos += lineHeight;
+
+            doc.setFont(undefined, "bold"); doc.text("Forma de amortización:", labelX, yPos);
+            doc.setFont(undefined, "normal"); doc.text(formaAmortTxt, valueX, yPos); yPos += (lineHeight + 3);
+
+            doc.setTextColor(0, 108, 114);
+            doc.setFontSize(13);
+            doc.setFont(undefined, "bold");
+            doc.text("III. CONDICIONES DEL CRÉDITO", MARGIN_LEFT, yPos);
+
+            yPos += 9;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont(undefined, "normal");
+
             const tasaNom = safeText(document.getElementById("tasa-nominal")?.textContent || "");
             const tasaMes = safeText(document.getElementById("detalle-tasa-mensual")?.textContent || "");
-            const tipoAmort = safeText(document.getElementById("tipo-amortizacion")?.value || "");
             const totalPagado = safeText(document.getElementById("detalle-total-pagado")?.textContent || "");
 
             doc.setFont(undefined, "bold"); doc.text("Valor del Crédito:", labelX, yPos);
@@ -1235,7 +1299,7 @@
                 head: headers,
                 body: body,
                 startY: HEADER_SPACE + 8,
-                margin: { top: HEADER_SPACE + 8, left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: FOOTER_SPACE + 6 },
+                margin: { top: HEADER_SPACE + 8, left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: RESERVED_BOTTOM },
                 theme: 'striped',
                 headStyles: { fillColor: [0, 108, 114], textColor: 255, fontSize: 8, fontStyle: 'bold' },
                 styles: { fontSize: 7, cellPadding: 1 },
@@ -2307,6 +2371,17 @@
           const logoH = 9.4;
           const footerW = 180;   // el nuevo footer es más ancho
           const footerH = 22;    // alto proporcional (ajustado)
+
+          // --- Leyenda legal (se reserva espacio para que la tabla NO la pise) ---
+          const LEGEND_TEXT = "El presente documento constituye una simulación financiera elaborada con fines informativos y de análisis, por lo cual los resultados aquí expuestos no representan compromisos definitivos ni obligaciones contractuales.";
+          const LEGEND_FONT_SIZE = 7;
+          const LEGEND_LINE_H = 3; // mm
+          doc.setFontSize(LEGEND_FONT_SIZE);
+          doc.setFont(undefined, "normal");
+          const legendMaxW = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+          const legendLines = doc.splitTextToSize(LEGEND_TEXT, legendMaxW);
+          const legendHeight = legendLines.length * LEGEND_LINE_H;
+          const RESERVED_BOTTOM = footerH + legendHeight + 18; // footer + leyenda + paginación + padding
           const headerTop = 8;
           const headerContentBottom = 30; // donde inicia contenido
 
@@ -2336,6 +2411,12 @@
             doc.setFontSize(9);
             doc.setTextColor(90);
             doc.text(`Página ${pageNum} de ${totalPages}`, PAGE_WIDTH - MARGIN_RIGHT, PAGE_HEIGHT - footerH - 10, { align:"right" });
+            // Leyenda legal (antes del pie) - posición fija y con espacio reservado
+            doc.setFontSize(LEGEND_FONT_SIZE);
+            doc.setTextColor(80);
+            const legendY = PAGE_HEIGHT - footerH - 14 - legendHeight; // arriba del pie y paginación
+            doc.text(legendLines, MARGIN_LEFT, legendY, { maxWidth: legendMaxW });
+            doc.setTextColor(0);
 
             // Reset color
             doc.setTextColor(0);
@@ -2374,11 +2455,28 @@
             if(tds.length) detalleRows.push(tds);
           });
 
-          const headDetalle = [];
-          const headTr = document.querySelector("#cap-tabla thead tr");
-          if(headTr){
-            headDetalle.push(Array.from(headTr.querySelectorAll("th")).map(th=>th.textContent.trim()));
-          }
+          // Encabezados de la tabla de detalle (Captación)
+// NOTA: el <table> de captación no tiene id="cap-tabla" (está dentro de #cap-tablaSection),
+// por eso tomamos el thead desde el table real y, si por alguna razón no existe, usamos un fallback institucional.
+const headDetalle = [];
+const capTableEl = document.querySelector("#cap-tablaSection table");
+const headTr = capTableEl ? capTableEl.querySelector("thead tr") : null;
+
+if (headTr) {
+  headDetalle.push(Array.from(headTr.querySelectorAll("th")).map(th => th.textContent.trim()));
+} else {
+  headDetalle.push([
+    "N.º",
+    "Fecha de pago",
+    "Días",
+    "Saldo inicial (COP)",
+    "Interés bruto (COP)",
+    "Retención (COP)",
+    "Interés neto (COP)",
+    "Abono capital (COP)",
+    "Saldo final (COP)"
+  ]);
+}
 
           // ======= Render resumen =======
           doc.setFontSize(10);
@@ -2387,7 +2485,7 @@
             startY: headerContentBottom,
             head: [["Concepto","Valor"]],
             body: resumenRows,
-            margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT },
+            margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: RESERVED_BOTTOM },
             styles: { font: (doc.getFontList && doc.getFontList().TwCenMT) ? "TwCenMT" : "helvetica", fontSize: 9, cellPadding: 3 },
             headStyles: { fillColor: [255,255,255], textColor:[0,0,0], lineWidth:0.1 },
             theme: "grid",
@@ -2412,7 +2510,7 @@
               startY: yAfter,
               head: headDetalle.length ? headDetalle : undefined,
               body: detalleRows,
-              margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT },
+              margin: { left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: RESERVED_BOTTOM },
               styles: { font: (doc.getFontList && doc.getFontList().TwCenMT) ? "TwCenMT" : "helvetica", fontSize: 8.5, cellPadding: 2.5 },
               headStyles: { fillColor: [255,255,255], textColor:[0,0,0], lineWidth:0.1 },
               theme: "grid",
