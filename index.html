@@ -317,6 +317,7 @@
                                 <th class="px-3 py-3 font-semibold">Fecha</th>
                                 <th class="px-3 py-3 font-semibold text-right">Cuota Total</th>
                                 <th class="px-3 py-3 font-semibold text-right">Interés</th>
+                                <th class="px-3 py-3 font-semibold text-right">Seguro Vida</th>
                                 <th class="px-3 py-3 font-semibold text-right">Capital</th>
                                 <th class="px-3 py-3 font-semibold text-right">Saldo Final</th>
                             </tr>
@@ -676,13 +677,14 @@
         let barChartInstance = null;
         let trendChartInstance = null;
         const MONTHS_IN_YEAR = 12;
+        const TASA_SEGURO_VIDA = 0.000419; // 0,0419% mensual fijo sobre el monto inicial
         let lastAmortizationTableData = []; 
         let clientData = {};
         // INICIO CAMBIO: Cargar consecutivo desde localStorage con fallback seguro
         let consecutiveCounter = 1;
         try {
             const saved = localStorage.getItem('simulador_consecutivo');
-            if (saved) consecutiveCounter = parseInt(saved);
+            if (saved) { const parsedSaved = parseInt(saved, 10); if (!Number.isNaN(parsedSaved)) consecutiveCounter = parsedSaved; }
         } catch (e) { console.warn("LocalStorage no disponible"); }
         // FIN CAMBIO
         let fullTrendData = []; 
@@ -980,18 +982,18 @@
                 ['TABLA DE AMORTIZACIÓN']
             ];
             
-            const headers = ['N.º Cuota', 'Fecha (Est.)', 'Cuota Total', 'Interés', 'Capital', 'Saldo Final'];
+            const headers = ['N.º Cuota', 'Fecha (Est.)', 'Cuota Total', 'Interés', 'Seguro Vida', 'Capital', 'Saldo Final'];
             
             // Los datos se exportan como números para que Excel los reconozca y pueda aplicar el formato
             const data = lastAmortizationTableData.map(item => [
-                item.nCuota, item.fecha, item.cuota, item.interes, item.capital, item.saldoFinal
+                item.nCuota, item.fecha, item.cuota, item.interes, item.seguroVida || 0, item.capital, item.saldoFinal
             ]);
             
             const ws = XLSX.utils.aoa_to_sheet([...infoCliente, headers, ...data]);
             
             // --- APLICAR FORMATO DE MONEDA Y ANCHO DE COLUMNAS ---
             const initialRowsOffset = infoCliente.length;
-            const currencyCols = ['C', 'D', 'E', 'F']; 
+            const currencyCols = ['C', 'D', 'E', 'F', 'G']; 
             const numberFormat = '"$"#,##0'; // Formato de moneda para COP (sin decimales)
 
             // Aplicar formato a las columnas de dinero (C, D, E, F)
@@ -1283,12 +1285,13 @@
             // --------------------------
             doc.addPage();
 
-            const headers = [['N.º', 'Fecha', 'Cuota Total', 'Interés', 'Capital', 'Saldo Final']];
+            const headers = [['N.º', 'Fecha', 'Cuota Total', 'Interés', 'Seguro Vida', 'Capital', 'Saldo Final']];
             const body = lastAmortizationTableData.map(item => [
                 item.nCuota,
                 item.fecha,
                 formatCurrency(item.cuota),
                 formatCurrency(item.interes),
+                formatCurrency(item.seguroVida || 0),
                 formatCurrency(item.capital),
                 formatCurrency(item.saldoFinal)
             ]);
@@ -1302,8 +1305,16 @@
                 margin: { top: HEADER_SPACE + 8, left: MARGIN_LEFT, right: MARGIN_RIGHT, bottom: RESERVED_BOTTOM },
                 theme: 'striped',
                 headStyles: { fillColor: [0, 108, 114], textColor: 255, fontSize: 8, fontStyle: 'bold' },
-                styles: { fontSize: 7, cellPadding: 1 },
-                columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } }
+                styles: { fontSize: 7, cellPadding: 1, valign: 'middle' },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 12 },
+                    1: { halign: 'center', cellWidth: 24 },
+                    2: { halign: 'right', cellWidth: 29 },
+                    3: { halign: 'right', cellWidth: 25 },
+                    4: { halign: 'right', cellWidth: 25 },
+                    5: { halign: 'right', cellWidth: 25 },
+                    6: { halign: 'right', cellWidth: 28 }
+                }
             });
 
             // --------------------------
@@ -1323,6 +1334,7 @@
 
         async function simularCredito() {
             const button = document.querySelector('button[onclick="simularCredito()"]');
+            try {
             const spinner = document.getElementById('loading-spinner');
             const errorMsg = document.getElementById('error-cliente');
             const excelBtn = document.getElementById('download-excel-btn');
@@ -1489,10 +1501,12 @@
             }
             
             const interesPrimeraAmortizacion = monto * tasaMensual;
+            const seguroVidaFijo = monto * TASA_SEGURO_VIDA;
             
             let saldoPendiente = monto;
             let totalInteres = 0;
             let totalCapital = 0;
+            let totalSeguroVida = 0;
             let totalPagado = 0;
             const tablaAmortizacion = [];
             const amortizacionAnual = {};
@@ -1504,8 +1518,6 @@
             let interesAcumuladoPeriodo = 0;
 
             for (let i = 1; i <= finalPlazo; i++) {
-                await new Promise(r => setTimeout(r, 0)); 
-
                 const fechaCuota = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + i, fechaInicio.getDate());
                 const fechaFormateada = fechaCuota.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -1513,6 +1525,9 @@
                 // El interés se calcula siempre sobre el saldo pendiente, usando la TEM.
                 // Esta es la lógica estándar de "interés sobre saldos" de sus archivos de referencia.
                 const interes = saldoPendiente * tasaMensual;
+                // El seguro de vida se calcula una sola vez con base en la cuota 1
+                // y se mantiene fijo durante toda la vigencia del crédito.
+                const seguroVida = seguroVidaFijo;
                 
                 let cuotaActual = 0;
                 let capital = 0;
@@ -1527,7 +1542,7 @@
                 
                 if (esPeriodoGracia) {
                     // Periodo de Gracia: Solo se pagan intereses
-                    cuotaActual = interes;
+                    cuotaActual = interes + seguroVida;
                     capital = 0;
                 } else if (esPeriodoAmortizacion) {
                     if (tipoAmortizacion === 'Constante') {
@@ -1535,10 +1550,10 @@
                         if (esMesAmortizacionCapital) {
                             // Mes de pago de capital: Se paga el capital fijo calculado + el interés
                             capital = capitalFijo;
-                            cuotaActual = capital + interes;
+                            cuotaActual = capital + interes + seguroVida;
                         } else {
                             // Mes intermedio: Solo se paga el interés (si la frecuencia es > mensual)
-                            cuotaActual = interes;
+                            cuotaActual = interes + seguroVida;
                             capital = 0;
                         }
 
@@ -1546,8 +1561,8 @@
                         // Créditos Persona Natural (Cuota Fija / Francés)
                         if (factorFrecuencia === 1) {
                             // Francés Mensual normal: Cuota total constante
-                            cuotaActual = cuotaFijaRecalculada;
-                            capital = cuotaActual - interes;
+                            cuotaActual = cuotaFijaRecalculada + seguroVida;
+                            capital = cuotaFijaRecalculada - interes;
                         } else if (esMesAmortizacionCapital) {
                             // Francés con frecuencia > mensual (Aproximación para cuota total del periodo fija)
                             
@@ -1555,13 +1570,13 @@
                             // y el interés total devengado en ese periodo.
                             let interesTotalPeriodo = interes * factorFrecuencia; 
                             capital = cuotaFijaRecalculada - interesTotalPeriodo;
-                            cuotaActual = cuotaFijaRecalculada;
+                            cuotaActual = cuotaFijaRecalculada + seguroVida;
                             
                             if (capital < 0) capital = 0; 
 
                         } else if (esMesIntermedio) {
                             // Mes intermedio: Solo interés (para Francés con frecuencia > mensual)
-                            cuotaActual = interes;
+                            cuotaActual = interes + seguroVida;
                             capital = 0;
                         }
                     }
@@ -1573,24 +1588,26 @@
                 if (i === finalPlazo) {
                     // El capital debe ser igual al saldo pendiente (absorbe cualquier diferencia de redondeo)
                     capital = saldoPendiente; 
-                    cuotaActual = capital + interes;
+                    cuotaActual = capital + interes + seguroVida;
                     saldoFlotante = 0;
                 }
 
                 totalInteres += interes;
                 totalCapital += capital;
+                totalSeguroVida += seguroVida;
                 totalPagado += cuotaActual;
                 saldoPendiente = saldoFlotante;
 
                 // Redondeo de los valores (Cero decimales para moneda)
                 const cuotaRounded = Math.round(cuotaActual);
                 const interesRounded = Math.round(interes);
+                const seguroVidaRounded = Math.round(seguroVida);
                 const capitalRounded = Math.round(capital);
                 const saldoFinalRounded = Math.round(saldoFlotante);
 
                 tablaAmortizacion.push({
                     nCuota: i, fecha: fechaFormateada, cuota: cuotaRounded,
-                    interes: interesRounded, capital: capitalRounded, saldoFinal: saldoFinalRounded
+                    interes: interesRounded, seguroVida: seguroVidaRounded, capital: capitalRounded, saldoFinal: saldoFinalRounded
                 });
 
                 let pctCapital = 0;
@@ -1624,13 +1641,13 @@
             // Recalcular la cuota inicial de referencia
             let cuotaInicialReferencia = 0;
             if (tipoAmortizacion === 'Constante') {
-                cuotaInicialReferencia = capitalFijo + interesPrimeraAmortizacion;
+                cuotaInicialReferencia = capitalFijo + interesPrimeraAmortizacion + seguroVidaFijo;
             } else { // Francés
                 if (frecuenciaAmortizacion === 'mensual') {
-                     cuotaInicialReferencia = cuotaFijaRecalculada;
+                     cuotaInicialReferencia = cuotaFijaRecalculada + seguroVidaFijo;
                 } else {
                     // Para Francés con frecuencia > mensual, la primera cuota es la primera en la tabla después del periodo de gracia
-                    cuotaInicialReferencia = tablaAmortizacion.find(c => c.nCuota > finalPeriodoGracia)?.cuota || interesPrimeraAmortizacion;
+                    cuotaInicialReferencia = tablaAmortizacion.find(c => c.nCuota > finalPeriodoGracia)?.cuota || (interesPrimeraAmortizacion + seguroVidaFijo);
                 }
             }
 
@@ -1668,16 +1685,30 @@
             document.getElementById('tabla-seccion').classList.remove('hidden');
             document.getElementById('trend-section-container').classList.remove('hidden');
 
-            spinner.classList.add('hidden');
-            button.disabled = false;
-            excelBtn.disabled = false;
-            pdfBtn.disabled = false;
-
             consecutiveCounter++;
             // INICIO CAMBIO: Guardar nuevo consecutivo
             localStorage.setItem('simulador_consecutivo', consecutiveCounter);
             // FIN CAMBIO
             actualizarConsecutivoUI();
+            } catch (error) {
+                console.error('Error al simular el crédito:', error);
+                const errorMsg = document.getElementById('error-cliente');
+                if (errorMsg) {
+                    errorMsg.textContent = 'Ocurrió un error al generar la simulación. Por favor revise los datos e intente nuevamente.';
+                    errorMsg.classList.remove('hidden');
+                } else {
+                    alert('Ocurrió un error al generar la simulación. Por favor revise los datos e intente nuevamente.');
+                }
+            } finally {
+                const spinner = document.getElementById('loading-spinner');
+                const button = document.querySelector('button[onclick="simularCredito()"]');
+                const excelBtn = document.getElementById('download-excel-btn');
+                const pdfBtn = document.getElementById('download-pdf-btn');
+                if (spinner) spinner.classList.add('hidden');
+                if (button) button.disabled = false;
+                if (excelBtn) excelBtn.disabled = false;
+                if (pdfBtn) pdfBtn.disabled = false;
+            }
         }
         // --- FIN DE simularCredito() ---
 
@@ -1858,6 +1889,7 @@
                     <td class="px-3 py-2 whitespace-nowrap">${item.fecha}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-right">${formatCurrency(item.cuota)}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-green">${formatCurrency(item.interes)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-right text-amber-600">${formatCurrency(item.seguroVida || 0)}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-right text-infihuila-blue">${formatCurrency(item.capital)}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-right font-medium">${formatCurrency(item.saldoFinal)}</td>
                 `;
