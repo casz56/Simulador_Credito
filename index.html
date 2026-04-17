@@ -546,12 +546,15 @@
 
             <div id="cap-horizonteWrap">
               <label class="block font-extrabold mb-2">Horizonte (meses)</label>
-              <select id="cap-horizonte" class="cap-input">
-                <option value="12" selected>12</option>
-                <option value="24">24</option>
-                <option value="36">36</option>
-              </select>
-              <div class="cap-muted mt-1">Aplica para Producto a la Vista.</div>
+              <input id="cap-horizonte" type="number" class="cap-input" min="1" step="1" value="12" placeholder="Ej: 12" list="cap-horizonte-sugerencias" />
+              <datalist id="cap-horizonte-sugerencias">
+                <option value="12"></option>
+                <option value="24"></option>
+                <option value="36"></option>
+                <option value="48"></option>
+                <option value="60"></option>
+              </datalist>
+              <div class="cap-muted mt-1">Aplica para Producto a la Vista. Puedes ingresar cualquier número entero de meses.</div>
             </div>
 
             <div class="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
@@ -1501,7 +1504,9 @@
             }
             
             const interesPrimeraAmortizacion = monto * tasaMensual;
-            const seguroVidaFijo = monto * TASA_SEGURO_VIDA;
+            // En banca empresarial (capital constante / sistema alemán) no aplica seguro de vida.
+            const aplicaSeguroVida = tipoAmortizacion !== 'Constante';
+            const seguroVidaFijo = aplicaSeguroVida ? (monto * TASA_SEGURO_VIDA) : 0;
             
             let saldoPendiente = monto;
             let totalInteres = 0;
@@ -1526,8 +1531,9 @@
                 // Esta es la lógica estándar de "interés sobre saldos" de sus archivos de referencia.
                 const interes = saldoPendiente * tasaMensual;
                 // El seguro de vida se calcula una sola vez con base en la cuota 1
-                // y se mantiene fijo durante toda la vigencia del crédito.
-                const seguroVida = seguroVidaFijo;
+                // y se mantiene fijo durante toda la vigencia del crédito cuando aplica.
+                // Para banca empresarial no se cobra seguro de vida.
+                const seguroVida = aplicaSeguroVida ? seguroVidaFijo : 0;
                 
                 let cuotaActual = 0;
                 let capital = 0;
@@ -2232,6 +2238,7 @@
           setErr($("cap-linea"), false);
           setErr($("cap-monto"), false);
           setErr($("cap-tasaEA"), false);
+          setErr($("cap-horizonte"), false);
 
           const linea = $("cap-linea").value;
           const monto = parseMoney($("cap-monto").value);
@@ -2243,8 +2250,16 @@
           if(!linea){ setErr($("cap-linea"), true); ok=false; }
           if(!isFinite(monto) || monto<=0){ setErr($("cap-monto"), true); ok=false; }
           if(!isFinite(tasaEA_pct) || tasaEA_pct<=0){ setErr($("cap-tasaEA"), true); ok=false; }
+          const horizonteMeses = Number($("cap-horizonte")?.value);
+          if(linea === "VISTA" && (!Number.isInteger(horizonteMeses) || horizonteMeses <= 0)){
+            setErr($("cap-horizonte"), true);
+            ok = false;
+          }
           if(!ok){
-            alert("Por favor completa: Tipo de Línea, Monto y Tasa E.A.");
+            const mensaje = linea === "VISTA"
+              ? "Por favor completa: Tipo de Línea, Monto, Tasa E.A. y un horizonte válido en meses."
+              : "Por favor completa: Tipo de Línea, Monto y Tasa E.A.";
+            alert(mensaje);
             return;
           }
 
@@ -2300,7 +2315,7 @@
             $("cap-resumenTxt").textContent =
               `Línea: CDAT · Plazo: ${plazoDias} días · Pago: ${pagoLabel(pago)} · Retención: ${reteRate>0 ? "Sí (4%)" : "No"}`;
           } else {
-            const meses = Number($("cap-horizonte").value);
+            const meses = horizonteMeses;
             const rMensual = eaToMonthlyEff(tasaEA);
 
             for(let n=1; n<=meses; n++){
@@ -2643,6 +2658,17 @@ document.addEventListener("DOMContentLoaded", () => {
           if(lineaEl){
             lineaEl.addEventListener("change", refreshLineaUI);
             refreshLineaUI();
+          }
+
+          const horizonteEl = $("cap-horizonte");
+          if(horizonteEl){
+            horizonteEl.addEventListener("input", () => {
+              horizonteEl.value = horizonteEl.value.replace(/[^\d]/g, "");
+              if(horizonteEl.value && Number(horizonteEl.value) < 1) horizonteEl.value = "1";
+            });
+            horizonteEl.addEventListener("blur", () => {
+              if(!horizonteEl.value || Number(horizonteEl.value) < 1) horizonteEl.value = "12";
+            });
           }
 
           const simBtn = $("cap-btnSimular");
