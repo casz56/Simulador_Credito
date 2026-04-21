@@ -471,7 +471,7 @@
                 class="h-12 sm:h-14 w-auto object-contain"
               />
               <div>
-                <h1 class="text-3xl font-black text-infihuila-blue">Simulador de Captación</h1>
+                <h1 class="text-3xl font-black text-infihuila-blue">Simulador de Rendimientos Financieros</h1>
                 <p class="cap-muted mt-1">CDAT y Productos a la Vista</p>
               </div>
             </div>
@@ -2293,7 +2293,7 @@
             ok = false;
           }
           if(!ok){
-            const mensaje = linea === "VISTA"
+            const mensaje = linea === "PRODUCTO A LA VISTA"
               ? "Por favor completa: Tipo de Línea, Monto, Tasa E.A. y un horizonte válido en meses."
               : "Por favor completa: Tipo de Línea, Monto y Tasa E.A.";
             alert(mensaje);
@@ -2731,7 +2731,7 @@ window.capDownloadExcel = function(){
 
             // --- Hoja: Resumen ---
             const resumen = [
-              ["INFIHUILA - Simulador de Captación", ""],
+              ["INFIHUILA - Simulador de Rendimientos Financieros", ""],
               ["Fecha simulación", ($("cap-fechaSim")?.textContent || "").trim()],
               ["Tipo de Línea", ($("cap-linea")?.value || "").trim()],
               ["Monto (COP)", ($("cap-monto")?.value || "").trim()],
